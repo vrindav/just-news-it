@@ -2,12 +2,21 @@ import os
 
 root_dir = os.path.expanduser("~")
 
-#train_data_path = os.path.join(root_dir, "ptr_nw/cnn-dailymail-master/finished_files/train.bin")
+#train_data_path = os.path.join(root_dir, "ptr_nw/cnn-dailymail-master/finished_files/train.bin") 
+
+train_data_path = os.path.join(root_dir, "Documents/JuniorYear/CS224N/just-news-it/pointer_summarizer/finished_files/chunked/train_*")
+eval_data_path = os.path.join(root_dir, "Documents/JuniorYear/CS224N/just-news-it/pointer_summarizer/finished_files/chunked/val.bin")
+decode_data_path = os.path.join(root_dir, "Documents/JuniorYear/CS224N/just-news-it/pointer_summarizer/finished_files/chunked/test.bin")
+vocab_path = os.path.join(root_dir, "Documents/JuniorYear/CS224N/just-news-it/pointer_summarizer/finished_files/vocab")
+log_root = os.path.join(root_dir, "Documents/JuniorYear/CS224N/just-news-it/pointer_summarizer/training_ptr_gen/log")
+
+
+'''
 train_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/pointer_summarizer/finished_files/chunked/train_*")
 eval_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/pointer_summarizer/finished_files/chunked/val.bin")
 decode_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/pointer_summarizer/finished_files/chunked/test.bin")
 vocab_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/pointer_summarizer/finished_files/vocab")
-log_root = os.path.join(root_dir, "Desktop/CS224N/just-news-it/pointer_summarizer/training_ptr_gen/log")
+log_root = os.path.join(root_dir, "Desktop/CS224N/just-news-it/pointer_summarizer/training_ptr_gen/log")'''
 
 # Hyperparameters
 hidden_dim= 256
