@@ -24,7 +24,7 @@ class Train(object):
         self.vocab = Vocab(config.vocab_path, config.vocab_size)
         self.batcher = Batcher(config.train_data_path, self.vocab, mode='train',
                                batch_size=config.batch_size, single_pass=False)
-        time.sleep(15)
+        #time.sleep(15)
 
         train_dir = os.path.join(config.log_root, 'train_%d' % (int(time.time())))
         if not os.path.exists(train_dir):
@@ -122,6 +122,7 @@ class Train(object):
         start = time.time()
         while iter < n_iters:
             batch = self.batcher.next_batch()
+
             loss = self.train_one_batch(batch)
 
             running_avg_loss = calc_running_avg_loss(loss, running_avg_loss, self.summary_writer, iter)

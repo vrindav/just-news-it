@@ -93,6 +93,7 @@ def example_generator(data_path, single_pass):
         str_len = struct.unpack('q', len_bytes)[0]
         example_str = struct.unpack('%ds' % str_len, reader.read(str_len))[0]
         yield example_pb2.Example.FromString(example_str)
+
     if single_pass:
       print("example_generator completed reading all datafiles. No more data.")
       break
@@ -154,7 +155,10 @@ def abstract2sents(abstract):
       start_p = abstract.find(SENTENCE_START.encode('utf-8'), cur)
       end_p = abstract.find(SENTENCE_END.encode('utf-8'), start_p + 1)
       cur = end_p + len(SENTENCE_END)
-      sents.append(abstract[start_p+len(SENTENCE_START):end_p])
+      sents.append(abstract[start_p+len(SENTENCE_START):end_p].decode("utf-8"))
+      
+      if cur >= len(abstract):
+        return sents
     except ValueError as e: # no more sentences
       return sents
 

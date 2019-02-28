@@ -204,11 +204,16 @@ class Batcher(object):
     return batch
 
   def fill_example_queue(self):
+    print("Filling the example queue")
     input_gen = self.text_generator(data.example_generator(self._data_path, self._single_pass))
 
     while True:
       try:
         (article, abstract) = next(input_gen) # read the next example from file. article and abstract are both strings.
+        abstract_sentences = [sent.strip() for sent in data.abstract2sents(abstract)] # Use the <s> and </s> tags in abstract to get a list of sentences.
+        example = Example(article, abstract_sentences, self._vocab) # Process into an Example.
+        self._example_queue.put(example) # place the Example in the example queue.
+
       except StopIteration: # if there are no more examples:
         tf.logging.info("The example generator for this example queue filling thread has exhausted data.")
         if self._single_pass:
@@ -218,9 +223,10 @@ class Batcher(object):
         else:
           raise Exception("single_pass mode is off but the example generator is out of data; error.")
 
-      abstract_sentences = [sent.strip() for sent in data.abstract2sents(abstract)] # Use the <s> and </s> tags in abstract to get a list of sentences.
-      example = Example(article, abstract_sentences, self._vocab) # Process into an Example.
-      self._example_queue.put(example) # place the Example in the example queue.
+      #print("Final length of the example queue: {}".format(self._example_queue.qsize()))
+      # abstract_sentences = [sent.strip() for sent in data.abstract2sents(abstract)] # Use the <s> and </s> tags in abstract to get a list of sentences.
+      # example = Example(article, abstract_sentences, self._vocab) # Process into an Example.
+      # self._example_queue.put(example) # place the Example in the example queue.
 
   def fill_batch_queue(self):
     while True:
