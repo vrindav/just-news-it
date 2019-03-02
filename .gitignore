@@ -1,2 +1,5 @@
 # transformer model
 transformer/trained.chkpt
+
+# data files
+data_files/
