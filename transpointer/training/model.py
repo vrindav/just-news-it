@@ -22,9 +22,12 @@ if torch.cuda.is_available():
 
 # class Transformer(nn.Module): defined in transformer_model/Models.py
 
-class Model(object):
+class Model(nn.Module):
     def __init__(self, n_src_vocab, n_tgt_vocab, len_max_seq, model_file_path=None, is_eval=False):
+        super(Model, self).__init__()
+
         transformer = tm.Transformer(n_src_vocab, n_tgt_vocab, len_max_seq)
+
             # d_word_vec=512, d_model=512, d_inner=2048,
             # n_layers=6, n_head=8, d_k=64, d_v=64, dropout=0.1,
             # tgt_emb_prj_weight_sharing=True,
@@ -34,11 +37,15 @@ class Model(object):
             transformer = transformer.cuda()
 
         self.transformer = transformer
-
-        ####### TODO: make this a real model that has a forward method. It'll then be easiest to add layers and do the pointer/generator stuff.
-
+        
         ####### TODO: load a pretrained model
         # if model_file_path is not None:
         #     state = torch.load(model_file_path, map_location= lambda storage, location: storage)
         #     self.encoder.load_state_dict(state['encoder_state_dict'])
         #     self.decoder.load_state_dict(state['decoder_state_dict'], strict=False)
+
+    def forward(self, src_seq, src_pos, tgt_seq, tgt_pos):
+
+        return self.transformer(src_seq, src_pos, tgt_seq, tgt_pos)
+
+

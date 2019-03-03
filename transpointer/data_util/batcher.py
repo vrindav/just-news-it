@@ -94,18 +94,15 @@ class Batch(object):
 
 
   def init_encoder_seq(self, example_list):
-    # Determine the maximum length of the encoder input sequence in this batch
-    max_enc_seq_len = max([ex.enc_len for ex in example_list])
-
     # Pad the encoder input sequences up to the length of the longest sequence
     for ex in example_list:
-      ex.pad_encoder_input(max_enc_seq_len, self.pad_id)
+      ex.pad_encoder_input(config.max_article_len, self.pad_id)
 
     # Initialize the numpy arrays
     # Note: our enc_batch can have different length (second dimension) for each batch because we use dynamic_rnn for the encoder.
-    self.enc_batch = np.zeros((self.batch_size, max_enc_seq_len), dtype=np.int32)
+    self.enc_batch = np.zeros((self.batch_size, config.max_article_len), dtype=np.int32)
     self.enc_lens = np.zeros((self.batch_size), dtype=np.int32)
-    self.enc_padding_mask = np.zeros((self.batch_size, max_enc_seq_len), dtype=np.float32)
+    self.enc_padding_mask = np.zeros((self.batch_size, config.max_article_len), dtype=np.float32)
 
     # Fill in the numpy arrays
     for i, ex in enumerate(example_list):
@@ -121,7 +118,7 @@ class Batch(object):
       # Store the in-article OOVs themselves
       self.art_oovs = [ex.article_oovs for ex in example_list]
       # Store the version of the enc_batch that uses the article OOV ids
-      self.enc_batch_extend_vocab = np.zeros((self.batch_size, max_enc_seq_len), dtype=np.int32)
+      self.enc_batch_extend_vocab = np.zeros((self.batch_size, config.max_article_len), dtype=np.int32)
       for i, ex in enumerate(example_list):
         self.enc_batch_extend_vocab[i, :] = ex.enc_input_extend_vocab[:]
 
@@ -207,6 +204,8 @@ class Batcher(object):
     print("Filling the example queue")
     input_gen = self.text_generator(data.example_generator(self._data_path, self._single_pass))
 
+    i = 0
+
     while True:
       try:
         (article, abstract) = next(input_gen) # read the next example from file. article and abstract are both strings.
@@ -222,6 +221,9 @@ class Batcher(object):
           break
         else:
           raise Exception("single_pass mode is off but the example generator is out of data; error.")
+
+      ###### TODO: remove this to train on more than 10 examples
+      if i >= 10: break
 
       #print("Final length of the example queue: {}".format(self._example_queue.qsize()))
       # abstract_sentences = [sent.strip() for sent in data.abstract2sents(abstract)] # Use the <s> and </s> tags in abstract to get a list of sentences.

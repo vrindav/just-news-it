@@ -50,11 +50,10 @@ class Train(object):
         model_save_path = os.path.join(self.model_dir, 'model_%d_%d' % (iter, int(time.time())))
         torch.save(state, model_save_path)
 
-    def setup_train(self, n_src_vocab, n_tgt_vocab, len_max_seq, model_file_path=None):
-        self.model = Model(n_src_vocab, n_tgt_vocab, len_max_seq)
+    def setup_train(self, n_src_vocab, n_tgt_vocab, model_file_path=None):
+        self.model = Model(n_src_vocab, n_tgt_vocab, config.max_article_len)
 
-        params = list(self.model.encoder.parameters()) + list(self.model.decoder.parameters()) + \
-                 list(self.model.reduce_state.parameters())
+        params = list(self.model.parameters())
         initial_lr = config.lr_coverage if config.is_coverage else config.lr
         self.optimizer = Adagrad(params, lr=initial_lr, initial_accumulator_value=config.adagrad_init_acc)
 
@@ -76,7 +75,9 @@ class Train(object):
         return start_iter, start_loss
 
 
-    def pad_sents(sents, pad_token):
+    def pad_sents(sents):
+
+        return sents
         sents_padded = []
 
         maxLen = 0
@@ -92,34 +93,54 @@ class Train(object):
 
         return sents_padded
 
+    def get_pos_data(self, padding_masks):
+        batch_size, seq_len = padding_masks.shape
+
+        pos_data = [[ j + 1 if padding_masks[i][j] != 1 else 0 for j in range(seq_len)] for i in range(batch_size)]
+
+        pos_data = torch.tensor(pos_data, dtype=torch.long)
+
+        return pos_data
+
     def train_one_batch(self, batch):
         enc_batch, enc_padding_mask, enc_lens, enc_batch_extend_vocab, extra_zeros, c_t_1, coverage = \
             get_input_from_batch(batch, use_cuda)
         dec_batch, dec_padding_mask, max_dec_len, dec_lens_var, target_batch = \
             get_output_from_batch(batch, use_cuda)
 
+        in_seq = enc_batch
+        in_pos = self.get_pos_data(enc_padding_mask)
+        tgt_seq = dec_batch
+        tgt_pos = self.get_pos_data(dec_padding_mask)
+
+        print(in_seq.shape)
+
+        # padding is already done in previous function (see batcher.py - init_decoder_seq & init_decoder_seq - Batch class)
         self.optimizer.zero_grad()
+        logits = self.model.forward(in_seq, in_pos, tgt_seq, tgt_pos)
 
-        # pad sequences to the same lengths, and pass the arguments into the forward method.
-        src_seq_padded = self.padSequence(src_seq)
-        tgt_seq_padded = self.padSequence(tgt_seq)
-        logits = self.transformer(src_seq, src_pos, tgt_seq, tgt_pos)
+        print(logits.shape) # -> shape error: if you look at the shape of the logits in the forward method of the transformer
+                            #                 you see that logits are shape (8, 99, 50000): why? batch_size = 8 and vocab_size = 50000
+                            #                 but I have no idea where the 99 comes from. Maybe a proble with the max sequence len?
+                            #                 also need to inevstigate how to deal with the padding
 
-
-        ####### TODO: compute loss from logits
+        ####### TODO: compute loss from logits -> probably nn.CrossEntropyLoss? Not sure though
         loss.backward()
 
-        self.norm = clip_grad_norm_(self.model.encoder.parameters(), config.max_grad_norm)
-        clip_grad_norm_(self.model.decoder.parameters(), config.max_grad_norm)
-        clip_grad_norm_(self.model.reduce_state.parameters(), config.max_grad_norm)
+        self.norm = clip_grad_norm_(self.parameters(), config.max_grad_norm)
+        clip_grad_norm_(self.model.parameters(), config.max_grad_norm)
 
         self.optimizer.step()
 
         return loss.item()
 
-    def trainIters(self, n_src_vocab, n_tgt_vocab, len_max_seq, n_iters, model_file_path=None):
+    def trainIters(self, n_src_vocab, n_tgt_vocab, n_iters, model_file_path=None):
 
-        iter, running_avg_loss = self.setup_train(n_src_vocab, n_tgt_vocab, len_max_seq, model_file_path)
+        print("Setting up the model...")
+
+        iter, running_avg_loss = self.setup_train(n_src_vocab, n_tgt_vocab, model_file_path)
+
+        print("Starting training...")
         
         start = time.time()
         while iter < n_iters:
@@ -154,4 +175,10 @@ if __name__ == '__main__':
     n_tgt_vocab = config.vocab_size
 
     train_processor = Train()
+
+    ##### TODO: get the right arguments to pass into trainIters
     train_processor.trainIters(n_src_vocab, n_tgt_vocab, config.max_iterations, args.model_file_path)
+
+
+
+

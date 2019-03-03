@@ -180,6 +180,8 @@ class Transformer(nn.Module):
         self.tgt_word_prj = nn.Linear(d_model, n_tgt_vocab, bias=False)
         nn.init.xavier_normal_(self.tgt_word_prj.weight)
 
+        print(len_max_seq)
+
         assert d_model == d_word_vec, \
         'To facilitate the residual connections, \
          the dimensions of all module outputs shall be the same.'
@@ -204,5 +206,7 @@ class Transformer(nn.Module):
         enc_output, *_ = self.encoder(src_seq, src_pos)
         dec_output, *_ = self.decoder(tgt_seq, tgt_pos, src_seq, enc_output)
         seq_logit = self.tgt_word_prj(dec_output) * self.x_logit_scale
+
+        print(seq_logit.size())
 
         return seq_logit.view(-1, seq_logit.size(2))

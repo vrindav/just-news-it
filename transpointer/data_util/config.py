@@ -12,11 +12,11 @@ log_root = os.path.join(root_dir, "/just-news-it/pointer_summarizer/training_ptr
 
 
 
-train_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/pointer_summarizer/finished_files/chunked/train_*")
-eval_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/pointer_summarizer/finished_files/chunked/val.bin")
-decode_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/pointer_summarizer/finished_files/chunked/test.bin")
-vocab_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/pointer_summarizer/finished_files/vocab")
-log_root = os.path.join(root_dir, "Desktop/CS224N/just-news-it/pointer_summarizer/training_ptr_gen/log")
+train_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/data_files/chunked/train_*")
+eval_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/data_files/chunked/val.bin")
+decode_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/data_files/chunked/test.bin")
+vocab_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/data_files/vocab")
+log_root = os.path.join(root_dir, "Desktop/CS224N/just-news-it/transpointer/training/log")
 
 # Hyperparameters
 hidden_dim= 256
@@ -27,6 +27,7 @@ max_dec_steps=100
 beam_size=4
 min_dec_steps=35
 vocab_size=50000
+max_article_len = 500
 
 lr=0.15
 adagrad_init_acc=0.1
