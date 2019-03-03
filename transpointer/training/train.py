@@ -56,6 +56,7 @@ class Train(object):
         params = list(self.model.parameters())
         initial_lr = config.lr_coverage if config.is_coverage else config.lr
         self.optimizer = Adagrad(params, lr=initial_lr, initial_accumulator_value=config.adagrad_init_acc)
+        self.loss_func = torch.nn.NLLLoss()
 
         start_iter, start_loss = 0, 0
 
@@ -73,25 +74,6 @@ class Train(object):
                                 state[k] = v.cuda()
 
         return start_iter, start_loss
-
-
-    def pad_sents(sents):
-
-        return sents
-        sents_padded = []
-
-        maxLen = 0
-        for sentence in sents:
-            if len(sentence) > maxLen:
-                maxLen = len(sentence)
-
-        for sentence in sents:
-            if len(sentence) < maxLen:
-                sents_padded.append(sentence + [pad_token for i in range(maxLen - len(sentence))])
-            else:
-                sents_padded.append(sentence)
-
-        return sents_padded
 
     def get_pos_data(self, padding_masks):
         batch_size, seq_len = padding_masks.shape
@@ -113,21 +95,16 @@ class Train(object):
         tgt_seq = dec_batch
         tgt_pos = self.get_pos_data(dec_padding_mask)
 
-        print(in_seq.shape)
-
         # padding is already done in previous function (see batcher.py - init_decoder_seq & init_decoder_seq - Batch class)
         self.optimizer.zero_grad()
         logits = self.model.forward(in_seq, in_pos, tgt_seq, tgt_pos)
 
-        print(logits.shape) # -> shape error: if you look at the shape of the logits in the forward method of the transformer
-                            #                 you see that logits are shape (8, 99, 50000): why? batch_size = 8 and vocab_size = 50000
-                            #                 but I have no idea where the 99 comes from. Maybe a proble with the max sequence len?
-                            #                 also need to inevstigate how to deal with the padding
+        # compute loss from logits -> probably nn.CrossEntropyLoss? Not sure though
+        loss = self.loss_func(logits, tgt_seq[:, :-1].contiguous().view(-1))
 
-        ####### TODO: compute loss from logits -> probably nn.CrossEntropyLoss? Not sure though
         loss.backward()
 
-        self.norm = clip_grad_norm_(self.parameters(), config.max_grad_norm)
+        self.norm = clip_grad_norm_(self.parameters(), config.max_grad_norm) # ----> this line causes error
         clip_grad_norm_(self.model.parameters(), config.max_grad_norm)
 
         self.optimizer.step()
