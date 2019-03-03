@@ -1,5 +1,7 @@
 from __future__ import unicode_literals, print_function, division
 
+import sys
+sys.path.insert(0, '../')
 import os
 import time
 import argparse
@@ -48,7 +50,7 @@ class Train(object):
         model_save_path = os.path.join(self.model_dir, 'model_%d_%d' % (iter, int(time.time())))
         torch.save(state, model_save_path)
 
-    def setup_train(self, , n_src_vocab, n_tgt_vocab, len_max_seq, model_file_path=None):
+    def setup_train(self, n_src_vocab, n_tgt_vocab, len_max_seq, model_file_path=None):
         self.model = Model(n_src_vocab, n_tgt_vocab, len_max_seq)
 
         params = list(self.model.encoder.parameters()) + list(self.model.decoder.parameters()) + \
@@ -73,6 +75,23 @@ class Train(object):
 
         return start_iter, start_loss
 
+
+    def pad_sents(sents, pad_token):
+        sents_padded = []
+
+        maxLen = 0
+        for sentence in sents:
+            if len(sentence) > maxLen:
+                maxLen = len(sentence)
+
+        for sentence in sents:
+            if len(sentence) < maxLen:
+                sents_padded.append(sentence + [pad_token for i in range(maxLen - len(sentence))])
+            else:
+                sents_padded.append(sentence)
+
+        return sents_padded
+
     def train_one_batch(self, batch):
         enc_batch, enc_padding_mask, enc_lens, enc_batch_extend_vocab, extra_zeros, c_t_1, coverage = \
             get_input_from_batch(batch, use_cuda)
@@ -81,12 +100,13 @@ class Train(object):
 
         self.optimizer.zero_grad()
 
-        ####### TODO: pad sequences to the same lengths, and pass the arguments into the forward method.
+        # pad sequences to the same lengths, and pass the arguments into the forward method.
+        src_seq_padded = self.padSequence(src_seq)
+        tgt_seq_padded = self.padSequence(tgt_seq)
         logits = self.transformer(src_seq, src_pos, tgt_seq, tgt_pos)
 
 
         ####### TODO: compute loss from logits
-
         loss.backward()
 
         self.norm = clip_grad_norm_(self.model.encoder.parameters(), config.max_grad_norm)
@@ -97,9 +117,8 @@ class Train(object):
 
         return loss.item()
 
-    def trainIters(self, n_iters, model_file_path=None):
+    def trainIters(self, n_src_vocab, n_tgt_vocab, len_max_seq, n_iters, model_file_path=None):
 
-        ####### TODO: pass correct arguments inside of setup_train
         iter, running_avg_loss = self.setup_train(n_src_vocab, n_tgt_vocab, len_max_seq, model_file_path)
         
         start = time.time()
@@ -130,5 +149,9 @@ if __name__ == '__main__':
                         help="Model file for retraining (default: None).")
     args = parser.parse_args()
     
+    # Same vocabulary for both input and output
+    n_src_vocab = config.vocab_size
+    n_tgt_vocab = config.vocab_size
+
     train_processor = Train()
-    train_processor.trainIters(config.max_iterations, args.model_file_path)
+    train_processor.trainIters(n_src_vocab, n_tgt_vocab, config.max_iterations, args.model_file_path)

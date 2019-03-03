@@ -1,15 +1,16 @@
 from __future__ import unicode_literals, print_function, division
 
+import sys
+sys.path.insert(0, '../')
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from numpy import random
 
-from tranformer_model import Models as tm
+from transformer_model import Models as tm
 
-import sys
-sys.path.insert(0, '../')
 from data_util import config
 
 use_cuda = config.use_gpu and torch.cuda.is_available()
