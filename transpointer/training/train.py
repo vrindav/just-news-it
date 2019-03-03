@@ -104,7 +104,7 @@ class Train(object):
 
         loss.backward()
 
-        self.norm = clip_grad_norm_(self.parameters(), config.max_grad_norm) # ----> this line causes error
+        self.norm = clip_grad_norm_(self.model.parameters(), config.max_grad_norm) # ----> this line causes error
         clip_grad_norm_(self.model.parameters(), config.max_grad_norm)
 
         self.optimizer.step()
@@ -127,7 +127,7 @@ class Train(object):
 
             running_avg_loss = calc_running_avg_loss(loss, running_avg_loss, self.summary_writer, iter)
             iter += 1
-
+            
             if iter % 100 == 0:
                 self.summary_writer.flush()
             print_interval = 1000
