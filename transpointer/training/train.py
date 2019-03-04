@@ -82,6 +82,9 @@ class Train(object):
 
         pos_data = torch.tensor(pos_data, dtype=torch.long)
 
+        if use_cuda:
+            pos_data = pos_data.cuda()
+
         return pos_data
 
     def train_one_batch(self, batch):
