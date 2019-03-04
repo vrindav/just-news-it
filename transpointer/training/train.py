@@ -133,7 +133,7 @@ class Train(object):
             
             if iter % 100 == 0:
                 self.summary_writer.flush()
-            print_interval = 1000
+            print_interval = 10
             if iter % print_interval == 0:
                 print('steps %d, seconds for %d batch: %.2f , loss: %f' % (iter, print_interval,
                                                                            time.time() - start, loss))
