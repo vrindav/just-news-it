@@ -220,7 +220,10 @@ class Summarizer(object):
         start = time.time()
         counter = 0
         batch = self.batcher.next_batch()
-        while batch is not None:
+        keep = True
+        while batch is not None or keep:
+            keep = False
+            
             # Run beam search to get best Hypothesis
             enc_batch, enc_padding_mask, enc_lens, enc_batch_extend_vocab, extra_zeros, c_t_0, coverage_t_0 = get_input_from_batch(batch, use_cuda)
 
@@ -247,7 +250,7 @@ class Summarizer(object):
                 write_for_rouge(original_abstract_sents, decoded_words, counter,
                                 self._rouge_ref_dir, self._rouge_dec_dir)
                 counter += 1
-                
+
             if counter % 1 == 0:
                 print('%d example in %d sec'%(counter, time.time() - start))
                 start = time.time()
