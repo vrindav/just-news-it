@@ -35,6 +35,7 @@ class Model(nn.Module):
 
         if use_cuda:
             transformer = transformer.cuda()
+            self.device = torch.device("cuda")
 
         self.transformer = transformer
         

@@ -15,6 +15,7 @@ import time
 
 import torch
 from torch.autograd import Variable
+import torch.nn.functional as F
 
 from data_util.batcher import Batcher
 from data_util.data import Vocab
@@ -23,37 +24,51 @@ from model import Model
 from data_util.utils import write_for_rouge, rouge_eval, rouge_log
 from train_util import get_input_from_batch
 
+from model import Model
+
+sys.path.insert(0, './transformer_model/')
+from Beam import Beam
+
 
 use_cuda = config.use_gpu and torch.cuda.is_available()
 
-class Beam(object):
-  def __init__(self, tokens, log_probs, state, context, coverage):
-    self.tokens = tokens
-    self.log_probs = log_probs
-    self.state = state
-    self.context = context
-    self.coverage = coverage
+class Summarizer(object):
+    ''' Load with trained model and handle the beam search '''
 
-  def extend(self, token, log_prob, state, context, coverage):
-    return Beam(tokens = self.tokens + [token],
-                      log_probs = self.log_probs + [log_prob],
-                      state = state,
-                      context = context,
-                      coverage = coverage)
+    def __init__(self, opt):
+        '''
+        opt needs to contain:
+            - model_file_path
+            - n_best
+            - max_token_seq_len
+        '''
+        self.opt = opt
+        self.device = torch.device('cuda' if use_cuda else 'cpu')
 
-  @property
-  def latest_token(self):
-    return self.tokens[-1]
+        model = Model(config.vocab_size, config.vocab_size, config.max_article_len)
 
-  @property
-  def avg_log_prob(self):
-    return sum(self.log_probs) / len(self.tokens)
+        checkpoint = torch.load(opt["model_file_path"], map_location= lambda storage, location: storage)
 
+        # model saved as: 
+        # state = {
+        #     'iter': iter,
+        #     'transformer_state_dict': self.model.state_dict(),
+        #     'optimizer': self.optimizer.state_dict(),
+        #     'current_loss': running_avg_loss
+        # }
 
-class BeamSearch(object):
-    def __init__(self, model_file_path):
-        model_name = os.path.basename(model_file_path)
-        self._decode_dir = os.path.join(config.log_root, 'decode_%s' % (model_name))
+            
+        model.load_state_dict(checkpoint['transformer_state_dict'])
+
+        print('[Info] Trained model state loaded.')
+
+        #model.word_prob_prj = nn.LogSoftmax(dim=1)
+
+        self.model = model.to(self.device)
+
+        self.model.eval()
+
+        self._decode_dir = os.path.join(config.log_root, 'decode_%s' % (opt["model_file_path"].split("/")[-1]))
         self._rouge_ref_dir = os.path.join(self._decode_dir, 'rouge_ref')
         self._rouge_dec_dir = os.path.join(self._decode_dir, 'rouge_dec_dir')
         for p in [self._decode_dir, self._rouge_ref_dir, self._rouge_dec_dir]:
@@ -62,14 +77,143 @@ class BeamSearch(object):
 
         self.vocab = Vocab(config.vocab_path, config.vocab_size)
         self.batcher = Batcher(config.decode_data_path, self.vocab, mode='decode',
-                               batch_size=config.beam_size, single_pass=True)
-        time.sleep(15)
+                               batch_size=config.batch_size, single_pass=True)
 
-        self.model = Model(model_file_path, is_eval=True)
+        print('[Info] Summarizer object created.')
 
-    def sort_beams(self, beams):
-        return sorted(beams, key=lambda h: h.avg_log_prob, reverse=True)
+    def summarize_batch(self, src_seq, src_pos):
+        ''' Translation work in one batch '''
 
+        def get_inst_idx_to_tensor_position_map(inst_idx_list):
+            ''' Indicate the position of an instance in a tensor. '''
+            return {inst_idx: tensor_position for tensor_position, inst_idx in enumerate(inst_idx_list)}
+
+        def collect_active_part(beamed_tensor, curr_active_inst_idx, n_prev_active_inst, n_bm):
+            ''' Collect tensor parts associated to active instances. '''
+
+            _, *d_hs = beamed_tensor.size()
+            n_curr_active_inst = len(curr_active_inst_idx)
+            new_shape = (n_curr_active_inst * n_bm, *d_hs)
+
+            beamed_tensor = beamed_tensor.view(n_prev_active_inst, -1)
+            beamed_tensor = beamed_tensor.index_select(0, curr_active_inst_idx)
+            beamed_tensor = beamed_tensor.view(*new_shape)
+
+            return beamed_tensor
+
+        def collate_active_info(
+                src_seq, src_enc, inst_idx_to_position_map, active_inst_idx_list):
+            # Sentences which are still active are collected,
+            # so the decoder will not run on completed sentences.
+            n_prev_active_inst = len(inst_idx_to_position_map)
+            active_inst_idx = [inst_idx_to_position_map[k] for k in active_inst_idx_list]
+            active_inst_idx = torch.LongTensor(active_inst_idx).to(self.device)
+
+            active_src_seq = collect_active_part(src_seq, active_inst_idx, n_prev_active_inst, n_bm)
+            active_src_enc = collect_active_part(src_enc, active_inst_idx, n_prev_active_inst, n_bm)
+            active_inst_idx_to_position_map = get_inst_idx_to_tensor_position_map(active_inst_idx_list)
+
+            return active_src_seq, active_src_enc, active_inst_idx_to_position_map
+
+        def beam_decode_step(
+                inst_dec_beams, len_dec_seq, src_seq, enc_output, inst_idx_to_position_map, n_bm):
+            ''' Decode and update beam status, and then return active beam idx '''
+
+            def prepare_beam_dec_seq(inst_dec_beams, len_dec_seq):
+                dec_partial_seq = [b.get_current_state() for b in inst_dec_beams if not b.done]
+                dec_partial_seq = torch.stack(dec_partial_seq).to(self.device)
+                dec_partial_seq = dec_partial_seq.view(-1, len_dec_seq)
+                return dec_partial_seq
+
+            def prepare_beam_dec_pos(len_dec_seq, n_active_inst, n_bm):
+                dec_partial_pos = torch.arange(1, len_dec_seq + 1, dtype=torch.long, device=self.device)
+                dec_partial_pos = dec_partial_pos.unsqueeze(0).repeat(n_active_inst * n_bm, 1)
+                return dec_partial_pos
+
+            def predict_word(dec_seq, dec_pos, src_seq, enc_output, n_active_inst, n_bm):
+                dec_output, *_ = self.model.transformer.decoder(dec_seq, dec_pos, src_seq, enc_output)
+                dec_output = dec_output[:, -1, :]  # Pick the last step: (bh * bm) * d_h
+                word_prob = F.log_softmax(self.model.transformer.tgt_word_prj(dec_output), dim=1)
+                word_prob = word_prob.view(n_active_inst, n_bm, -1)
+
+                return word_prob
+
+            def collect_active_inst_idx_list(inst_beams, word_prob, inst_idx_to_position_map):
+                active_inst_idx_list = []
+                for inst_idx, inst_position in inst_idx_to_position_map.items():
+                    is_inst_complete = inst_beams[inst_idx].advance(word_prob[inst_position])
+                    if not is_inst_complete:
+                        active_inst_idx_list += [inst_idx]
+
+                return active_inst_idx_list
+
+            n_active_inst = len(inst_idx_to_position_map)
+
+            dec_seq = prepare_beam_dec_seq(inst_dec_beams, len_dec_seq)
+            dec_pos = prepare_beam_dec_pos(len_dec_seq, n_active_inst, n_bm)
+            word_prob = predict_word(dec_seq, dec_pos, src_seq, enc_output, n_active_inst, n_bm)
+
+            # Update the beam with predicted word prob information and collect incomplete instances
+            active_inst_idx_list = collect_active_inst_idx_list(
+                inst_dec_beams, word_prob, inst_idx_to_position_map)
+
+            return active_inst_idx_list
+
+        def collect_hypothesis_and_scores(inst_dec_beams, n_best):
+            all_hyp, all_scores = [], []
+            for inst_idx in range(len(inst_dec_beams)):
+                scores, tail_idxs = inst_dec_beams[inst_idx].sort_scores()
+                all_scores += [scores[:n_best]]
+
+                hyps = [inst_dec_beams[inst_idx].get_hypothesis(i) for i in tail_idxs[:n_best]]
+                all_hyp += [hyps]
+            return all_hyp, all_scores
+
+        with torch.no_grad():
+            #-- Encode
+            src_seq, src_pos = src_seq.to(self.device), src_pos.to(self.device)
+            src_enc, *_ = self.model.transformer.encoder(src_seq, src_pos)
+
+            #-- Repeat data for beam search
+            n_bm = config.beam_size
+            n_inst, len_s, d_h = src_enc.size()
+            src_seq = src_seq.repeat(1, n_bm).view(n_inst * n_bm, len_s)
+            src_enc = src_enc.repeat(1, n_bm, 1).view(n_inst * n_bm, len_s, d_h)
+
+            #-- Prepare beams
+            inst_dec_beams = [Beam(n_bm, device=self.device) for _ in range(n_inst)]
+
+            #-- Bookkeeping for active or not
+            active_inst_idx_list = list(range(n_inst))
+            inst_idx_to_position_map = get_inst_idx_to_tensor_position_map(active_inst_idx_list)
+
+            #-- Decode
+            for len_dec_seq in range(1, self.opt["max_token_seq_len"] + 1):
+
+                active_inst_idx_list = beam_decode_step(
+                    inst_dec_beams, len_dec_seq, src_seq, src_enc, inst_idx_to_position_map, n_bm)
+
+                if not active_inst_idx_list:
+                    break  # all instances have finished their path to <EOS>
+
+                src_seq, src_enc, inst_idx_to_position_map = collate_active_info(
+                    src_seq, src_enc, inst_idx_to_position_map, active_inst_idx_list)
+
+        batch_hyp, batch_scores = collect_hypothesis_and_scores(inst_dec_beams, self.opt["n_best"])
+
+        return batch_hyp, batch_scores
+
+    def get_pos_data(self, padding_masks):
+        batch_size, seq_len = padding_masks.shape
+
+        pos_data = [[ j + 1 if padding_masks[i][j] != 1 else 0 for j in range(seq_len)] for i in range(batch_size)]
+
+        pos_data = torch.tensor(pos_data, dtype=torch.long)
+
+        if use_cuda:
+            pos_data = pos_data.cuda()
+
+        return pos_data
 
     def decode(self):
         start = time.time()
@@ -77,7 +221,12 @@ class BeamSearch(object):
         batch = self.batcher.next_batch()
         while batch is not None:
             # Run beam search to get best Hypothesis
-            best_summary = self.beam_search(batch)
+            enc_batch, enc_padding_mask, enc_lens, enc_batch_extend_vocab, extra_zeros, c_t_0, coverage_t_0 = get_input_from_batch(batch, use_cuda)
+
+            in_seq = enc_batch
+            in_pos = self.get_pos_data(enc_padding_mask)
+
+            best_summary = self.summarize_batch(in_seq, in_pos)
 
             # Extract the output ids from the hypothesis and convert back to words
             output_ids = [int(t) for t in best_summary.tokens[1:]]
@@ -96,7 +245,7 @@ class BeamSearch(object):
             write_for_rouge(original_abstract_sents, decoded_words, counter,
                             self._rouge_ref_dir, self._rouge_dec_dir)
             counter += 1
-            if counter % 1000 == 0:
+            if counter % 1 == 0:
                 print('%d example in %d sec'%(counter, time.time() - start))
                 start = time.time()
 
@@ -108,104 +257,16 @@ class BeamSearch(object):
         rouge_log(results_dict, self._decode_dir)
 
 
-    def beam_search(self, batch):
-        #batch should have only one example
-        enc_batch, enc_padding_mask, enc_lens, enc_batch_extend_vocab, extra_zeros, c_t_0, coverage_t_0 = \
-            get_input_from_batch(batch, use_cuda)
-
-        encoder_outputs, encoder_feature, encoder_hidden = self.model.encoder(enc_batch, enc_lens)
-        s_t_0 = self.model.reduce_state(encoder_hidden)
-
-        dec_h, dec_c = s_t_0 # 1 x 2*hidden_size
-        dec_h = dec_h.squeeze()
-        dec_c = dec_c.squeeze()
-
-        #decoder batch preparation, it has beam_size example initially everything is repeated
-        beams = [Beam(tokens=[self.vocab.word2id(data.START_DECODING)],
-                      log_probs=[0.0],
-                      state=(dec_h[0], dec_c[0]),
-                      context = c_t_0[0],
-                      coverage=(coverage_t_0[0] if config.is_coverage else None))
-                 for _ in range(config.beam_size)]
-        results = []
-        steps = 0
-        while steps < config.max_dec_steps and len(results) < config.beam_size:
-            latest_tokens = [h.latest_token for h in beams]
-            latest_tokens = [t if t < self.vocab.size() else self.vocab.word2id(data.UNKNOWN_TOKEN) \
-                             for t in latest_tokens]
-            y_t_1 = Variable(torch.LongTensor(latest_tokens))
-            if use_cuda:
-                y_t_1 = y_t_1.cuda()
-            all_state_h =[]
-            all_state_c = []
-
-            all_context = []
-
-            for h in beams:
-                state_h, state_c = h.state
-                all_state_h.append(state_h)
-                all_state_c.append(state_c)
-
-                all_context.append(h.context)
-
-            s_t_1 = (torch.stack(all_state_h, 0).unsqueeze(0), torch.stack(all_state_c, 0).unsqueeze(0))
-            c_t_1 = torch.stack(all_context, 0)
-
-            coverage_t_1 = None
-            if config.is_coverage:
-                all_coverage = []
-                for h in beams:
-                    all_coverage.append(h.coverage)
-                coverage_t_1 = torch.stack(all_coverage, 0)
-
-            final_dist, s_t, c_t, attn_dist, p_gen, coverage_t = self.model.decoder(y_t_1, s_t_1,
-                                                        encoder_outputs, encoder_feature, enc_padding_mask, c_t_1,
-                                                        extra_zeros, enc_batch_extend_vocab, coverage_t_1, steps)
-            log_probs = torch.log(final_dist)
-            topk_log_probs, topk_ids = torch.topk(log_probs, config.beam_size * 2)
-
-            dec_h, dec_c = s_t
-            dec_h = dec_h.squeeze()
-            dec_c = dec_c.squeeze()
-
-            all_beams = []
-            num_orig_beams = 1 if steps == 0 else len(beams)
-            for i in range(num_orig_beams):
-                h = beams[i]
-                state_i = (dec_h[i], dec_c[i])
-                context_i = c_t[i]
-                coverage_i = (coverage_t[i] if config.is_coverage else None)
-
-                for j in range(config.beam_size * 2):  # for each of the top 2*beam_size hyps:
-                    new_beam = h.extend(token=topk_ids[i, j].item(),
-                                   log_prob=topk_log_probs[i, j].item(),
-                                   state=state_i,
-                                   context=context_i,
-                                   coverage=coverage_i)
-                    all_beams.append(new_beam)
-
-            beams = []
-            for h in self.sort_beams(all_beams):
-                if h.latest_token == self.vocab.word2id(data.STOP_DECODING):
-                    if steps >= config.min_dec_steps:
-                        results.append(h)
-                else:
-                    beams.append(h)
-                if len(beams) == config.beam_size or len(results) == config.beam_size:
-                    break
-
-            steps += 1
-
-        if len(results) == 0:
-            results = beams
-
-        beams_sorted = self.sort_beams(results)
-
-        return beams_sorted[0]
 
 if __name__ == '__main__':
     model_filename = sys.argv[1]
-    beam_Search_processor = BeamSearch(model_filename)
-    beam_Search_processor.decode()
+    opt = {}
+
+    opt["model_file_path"] = model_filename
+    opt["n_best"] = 3
+    opt["max_token_seq_len"] = 200
+
+    summarizer = Summarizer(opt)
+    summarizer.decode()
 
 

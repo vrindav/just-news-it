@@ -3,3 +3,9 @@ transformer/trained.chkpt
 
 # data files
 data_files/
+
+#transpointer models
+transpointer/training/log
+
+#config file
+transpointer/data_util/config.py
