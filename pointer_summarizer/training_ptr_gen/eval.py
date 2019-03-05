@@ -7,6 +7,8 @@ import sys
 import tensorflow as tf
 import torch
 
+import sys
+sys.path.insert(0, '../')
 from data_util import config
 from data_util.batcher import Batcher
 from data_util.data import Vocab
