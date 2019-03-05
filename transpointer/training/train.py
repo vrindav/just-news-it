@@ -65,7 +65,7 @@ class Train(object):
             start_iter = state['iter']
             start_loss = state['current_loss']
 
-            self.model.load_state_dict(state['model_state_dict'])
+            self.model.load_state_dict(state['transformer_state_dict'])
 
             if not config.is_coverage:
                 self.optimizer.load_state_dict(state['optimizer'])
