@@ -65,7 +65,7 @@ class Train(object):
             start_iter = state['iter']
             start_loss = state['current_loss']
 
-            model.load_state_dict(state['model_state_dict'])
+            self.model.load_state_dict(state['model_state_dict'])
 
             if not config.is_coverage:
                 self.optimizer.load_state_dict(state['optimizer'])
@@ -143,7 +143,7 @@ class Train(object):
             
             if iter % 10 == 0:
                 path = self.save_model(running_avg_loss, iter)
-                
+
                 print("Saving Checkpoint at {}".format(path))
                 
 
