@@ -237,16 +237,17 @@ class Summarizer(object):
             output_words = np.array(batch_hyp)
             output_words = output_words[:, 0, 1:]
 
-            decoded_words = data.outputids2words(output_words, self.vocab,
+            for i, out_sent in enumerate(output_words):
+
+                decoded_words = data.outputids2words(out_sent, self.vocab,
                                                  (batch.art_oovs[0] if config.pointer_gen else None))
 
-            for i, decoded_sent in enumerate(decoded_words):
-                
                 original_abstract_sents = batch.original_abstracts_sents[i]
 
-                write_for_rouge(original_abstract_sents, decoded_sent, counter,
+                write_for_rouge(original_abstract_sents, decoded_words, counter,
                                 self._rouge_ref_dir, self._rouge_dec_dir)
-            counter += 1
+                counter += 1
+                
             if counter % 1 == 0:
                 print('%d example in %d sec'%(counter, time.time() - start))
                 start = time.time()
