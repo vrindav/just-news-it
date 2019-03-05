@@ -41,9 +41,7 @@ class Train(object):
     def save_model(self, running_avg_loss, iter):
         state = {
             'iter': iter,
-            'encoder_state_dict': self.model.encoder.state_dict(),
-            'decoder_state_dict': self.model.decoder.state_dict(),
-            'reduce_state_dict': self.model.reduce_state.state_dict(),
+            'transformer_state_dict': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
             'current_loss': running_avg_loss
         }
@@ -64,6 +62,8 @@ class Train(object):
             state = torch.load(model_file_path, map_location= lambda storage, location: storage)
             start_iter = state['iter']
             start_loss = state['current_loss']
+
+            model.load_state_dict(state['model_state_dict'])
 
             if not config.is_coverage:
                 self.optimizer.load_state_dict(state['optimizer'])
@@ -138,7 +138,8 @@ class Train(object):
                 print('steps %d, seconds for %d batch: %.2f , loss: %f' % (iter, print_interval,
                                                                            time.time() - start, loss))
                 start = time.time()
-            if iter % 5000 == 0:
+            
+            if iter % 10 == 0:
                 self.save_model(running_avg_loss, iter)
 
 if __name__ == '__main__':
