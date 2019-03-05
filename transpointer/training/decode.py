@@ -12,6 +12,7 @@ sys.path.insert(0, '../')
 
 import os
 import time
+import numpy as np
 
 import torch
 from torch.autograd import Variable
@@ -226,24 +227,25 @@ class Summarizer(object):
             in_seq = enc_batch
             in_pos = self.get_pos_data(enc_padding_mask)
 
-            best_summary = self.summarize_batch(in_seq, in_pos)
+            print("Summarizing first batch...")
+
+            batch_hyp, batch_scores = self.summarize_batch(in_seq, in_pos)
+
+            print("Summarized one batch!")
 
             # Extract the output ids from the hypothesis and convert back to words
-            output_ids = [int(t) for t in best_summary.tokens[1:]]
-            decoded_words = data.outputids2words(output_ids, self.vocab,
+            output_words = np.array(batch_hyp)
+            output_words = output_words[:, 0, 1:]
+
+            decoded_words = data.outputids2words(output_words, self.vocab,
                                                  (batch.art_oovs[0] if config.pointer_gen else None))
 
-            # Remove the [STOP] token from decoded_words, if necessary
-            try:
-                fst_stop_idx = decoded_words.index(data.STOP_DECODING)
-                decoded_words = decoded_words[:fst_stop_idx]
-            except ValueError:
-                decoded_words = decoded_words
+            for i, decoded_sent in enumerate(decoded_words):
+                
+                original_abstract_sents = batch.original_abstracts_sents[i]
 
-            original_abstract_sents = batch.original_abstracts_sents[0]
-
-            write_for_rouge(original_abstract_sents, decoded_words, counter,
-                            self._rouge_ref_dir, self._rouge_dec_dir)
+                write_for_rouge(original_abstract_sents, decoded_sent, counter,
+                                self._rouge_ref_dir, self._rouge_dec_dir)
             counter += 1
             if counter % 1 == 0:
                 print('%d example in %d sec'%(counter, time.time() - start))
