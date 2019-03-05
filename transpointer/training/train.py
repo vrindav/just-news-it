@@ -48,6 +48,8 @@ class Train(object):
         model_save_path = os.path.join(self.model_dir, 'model_%d_%d' % (iter, int(time.time())))
         torch.save(state, model_save_path)
 
+        return model_save_path
+
     def setup_train(self, n_src_vocab, n_tgt_vocab, model_file_path=None):
         self.model = Model(n_src_vocab, n_tgt_vocab, config.max_article_len)
 
@@ -140,7 +142,10 @@ class Train(object):
                 start = time.time()
             
             if iter % 10 == 0:
-                self.save_model(running_avg_loss, iter)
+                path = self.save_model(running_avg_loss, iter)
+                
+                print("Saving Checkpoint at {}".format(path))
+                
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Train script")
