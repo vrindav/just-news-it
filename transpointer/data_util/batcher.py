@@ -223,7 +223,7 @@ class Batcher(object):
           raise Exception("single_pass mode is off but the example generator is out of data; error.")
 
       ###### TODO: remove this to train on more than 10 examples
-      #if i >= 10: break
+      if i >= 10: break
 
       #print("Final length of the example queue: {}".format(self._example_queue.qsize()))
       # abstract_sentences = [sent.strip() for sent in data.abstract2sents(abstract)] # Use the <s> and </s> tags in abstract to get a list of sentences.

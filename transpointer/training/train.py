@@ -56,7 +56,7 @@ class Train(object):
         params = list(self.model.parameters())
         initial_lr = config.lr_coverage if config.is_coverage else config.lr
         self.optimizer = Adagrad(params, lr=initial_lr, initial_accumulator_value=config.adagrad_init_acc)
-        self.loss_func = torch.nn.NLLLoss()
+        self.loss_func = torch.nn.CrossEntropyLoss() #torch.nn.NLLLoss()
 
         start_iter, start_loss = 0, 0
 
@@ -133,7 +133,7 @@ class Train(object):
             
             if iter % 100 == 0:
                 self.summary_writer.flush()
-            print_interval = 10
+            print_interval = 1
             if iter % print_interval == 0:
                 print('steps %d, seconds for %d batch: %.2f , loss: %f' % (iter, print_interval,
                                                                            time.time() - start, loss))
