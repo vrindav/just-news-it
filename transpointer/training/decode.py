@@ -133,8 +133,13 @@ class Summarizer(object):
 
             def predict_word(dec_seq, dec_pos, src_seq, enc_output, n_active_inst, n_bm):
                 dec_output, *_ = self.model.transformer.decoder(dec_seq, dec_pos, src_seq, enc_output)
+                print("dec_output (line 136)", dec_output.size())
+                print("batch size", config.batch_size)
                 dec_output = dec_output[:, -1, :]  # Pick the last step: (bh * bm) * d_h
-                word_prob = F.log_softmax(self.model.transformer.tgt_word_prj(dec_output), dim=1)
+                word_prob = F.softmax(self.model.transformer.tgt_word_prj(dec_output), dim=1)
+
+                print("word_prob", torch.max(word_prob, 1))
+
                 word_prob = word_prob.view(n_active_inst, n_bm, -1)
 
                 return word_prob
@@ -176,7 +181,8 @@ class Summarizer(object):
             src_enc, *_ = self.model.transformer.encoder(src_seq, src_pos)
 
             #-- Repeat data for beam search
-            n_bm = config.beam_size
+            #n_bm = config.beam_size
+            n_bm = 1
             n_inst, len_s, d_h = src_enc.size()
             src_seq = src_seq.repeat(1, n_bm).view(n_inst * n_bm, len_s)
             src_enc = src_enc.repeat(1, n_bm, 1).view(n_inst * n_bm, len_s, d_h)
@@ -226,6 +232,9 @@ class Summarizer(object):
 
             # Run beam search to get best Hypothesis
             enc_batch, enc_padding_mask, enc_lens, enc_batch_extend_vocab, extra_zeros, c_t_0, coverage_t_0 = get_input_from_batch(batch, use_cuda)
+
+            enc_batch = enc_batch[0:1, :]
+            enc_padding_mask = enc_padding_mask[0:1, :]
 
             in_seq = enc_batch
             in_pos = self.get_pos_data(enc_padding_mask)

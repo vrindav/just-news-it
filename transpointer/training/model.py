@@ -38,12 +38,6 @@ class Model(nn.Module):
             self.device = torch.device("cuda")
 
         self.transformer = transformer
-        
-        ####### TODO: load a pretrained model
-        # if model_file_path is not None:
-        #     state = torch.load(model_file_path, map_location= lambda storage, location: storage)
-        #     self.encoder.load_state_dict(state['encoder_state_dict'])
-        #     self.decoder.load_state_dict(state['decoder_state_dict'], strict=False)
 
     def forward(self, src_seq, src_pos, tgt_seq, tgt_pos):
 
