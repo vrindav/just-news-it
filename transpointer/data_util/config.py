@@ -13,10 +13,12 @@ log_root = os.path.join(root_dir, "/just-news-it/pointer_summarizer/training_ptr
 
 
 train_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/data_files/chunked/train_*")
-eval_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/data_files/val.bin")
+eval_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/data_files//chunked/val_*")
 decode_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/data_files/test.bin")
 vocab_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/data_files/vocab")
 log_root = os.path.join(root_dir, "Desktop/CS224N/just-news-it/transpointer/training/log")
+
+decode_data_path = train_data_path
 
 # Hyperparameters
 hidden_dim= 256

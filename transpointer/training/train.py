@@ -56,7 +56,7 @@ class Train(object):
         params = list(self.model.parameters())
         initial_lr = config.lr_coverage if config.is_coverage else config.lr
         self.optimizer = Adagrad(params, lr=initial_lr, initial_accumulator_value=config.adagrad_init_acc)
-        self.loss_func = torch.nn.CrossEntropyLoss() #torch.nn.NLLLoss()
+        self.loss_func = torch.nn.CrossEntropyLoss(reduction='sum') #torch.nn.NLLLoss()
 
         start_iter, start_loss = 0, 0
 
@@ -104,7 +104,12 @@ class Train(object):
         self.optimizer.zero_grad()
         logits = self.model.forward(in_seq, in_pos, tgt_seq, tgt_pos)
 
-        # compute loss from logits -> probably nn.CrossEntropyLoss? Not sure though
+        # compute loss from logits
+        # print(logits.size())
+        # print(torch.max(logits, 1)[1][:10])
+        # print(tgt_seq[:, :-1].contiguous().view(-1))
+        # print(torch.max(logits, 1)[1][:10] - tgt_seq[:, :-1].contiguous().view(-1)[:10])
+        
         loss = self.loss_func(logits, tgt_seq[:, :-1].contiguous().view(-1))
 
         loss.backward()

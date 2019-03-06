@@ -232,26 +232,26 @@ class Batcher(object):
 
   def fill_batch_queue(self):
     while True:
-      # if self.mode == 'decode':
-      #   # beam search decode mode single example repeated in the batch
-      #   ex = self._example_queue.get()
-      #   b = [ex for _ in range(self.batch_size)]
-      #   self._batch_queue.put(Batch(b, self._vocab, self.batch_size))
-      # else:
-        # Get bucketing_cache_size-many batches of Examples into a list, then sort
-      inputs = []
-      for _ in range(self.batch_size * self._bucketing_cache_size):
-        inputs.append(self._example_queue.get())
-      inputs = sorted(inputs, key=lambda inp: inp.enc_len, reverse=True) # sort by length of encoder sequence
-
-      # Group the sorted Examples into batches, optionally shuffle the batches, and place in the batch queue.
-      batches = []
-      for i in range(0, len(inputs), self.batch_size):
-        batches.append(inputs[i:i + self.batch_size])
-      if not self._single_pass:
-        shuffle(batches)
-      for b in batches:  # each b is a list of Example objects
+      if self.mode == 'decode':
+        # beam search decode mode single example repeated in the batch
+        ex = self._example_queue.get()
+        b = [ex for _ in range(self.batch_size)]
         self._batch_queue.put(Batch(b, self._vocab, self.batch_size))
+      else:
+        # Get bucketing_cache_size-many batches of Examples into a list, then sort
+        inputs = []
+        for _ in range(self.batch_size * self._bucketing_cache_size):
+          inputs.append(self._example_queue.get())
+        inputs = sorted(inputs, key=lambda inp: inp.enc_len, reverse=True) # sort by length of encoder sequence
+
+        # Group the sorted Examples into batches, optionally shuffle the batches, and place in the batch queue.
+        batches = []
+        for i in range(0, len(inputs), self.batch_size):
+          batches.append(inputs[i:i + self.batch_size])
+        if not self._single_pass:
+          shuffle(batches)
+        for b in batches:  # each b is a list of Example objects
+          self._batch_queue.put(Batch(b, self._vocab, self.batch_size))
 
   def watch_threads(self):
     while True:

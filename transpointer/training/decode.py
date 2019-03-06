@@ -80,6 +80,8 @@ class Summarizer(object):
         self.batcher = Batcher(config.decode_data_path, self.vocab, mode='decode',
                                batch_size=config.batch_size, single_pass=True)
 
+        time.sleep(15)
+        
         print('[Info] Summarizer object created.')
 
     def summarize_batch(self, src_seq, src_pos):
@@ -133,12 +135,21 @@ class Summarizer(object):
 
             def predict_word(dec_seq, dec_pos, src_seq, enc_output, n_active_inst, n_bm):
                 dec_output, *_ = self.model.transformer.decoder(dec_seq, dec_pos, src_seq, enc_output)
-                print("dec_output (line 136)", dec_output.size())
-                print("batch size", config.batch_size)
-                dec_output = dec_output[:, -1, :]  # Pick the last step: (bh * bm) * d_h
-                word_prob = F.softmax(self.model.transformer.tgt_word_prj(dec_output), dim=1)
+                
+                # print("dec_output (line 136)", dec_output.size())
+                # print("batch size", config.batch_size)
+                # print("decoder output", dec_output[:, -1, :10])
 
-                print("word_prob", torch.max(word_prob, 1))
+                dec_output = dec_output[:, -1, :]  # Pick the last step: (bh * bm) * d_h
+                logits = self.model.transformer.tgt_word_prj(dec_output)
+
+                # print("logits size", logits.size())
+                # print("logits", logits[:, :10])
+
+                word_prob = logits#F.softmax(logits, dim=1)
+
+                # print(word_prob[:, :10])
+                # print("word_prob", torch.max(word_prob, 1))
 
                 word_prob = word_prob.view(n_active_inst, n_bm, -1)
 
@@ -157,6 +168,10 @@ class Summarizer(object):
 
             dec_seq = prepare_beam_dec_seq(inst_dec_beams, len_dec_seq)
             dec_pos = prepare_beam_dec_pos(len_dec_seq, n_active_inst, n_bm)
+
+            print("first dec_seq", dec_seq)
+            # print("first dec_pos", dec_pos)
+
             word_prob = predict_word(dec_seq, dec_pos, src_seq, enc_output, n_active_inst, n_bm)
 
             # Update the beam with predicted word prob information and collect incomplete instances
@@ -177,6 +192,12 @@ class Summarizer(object):
 
         with torch.no_grad():
             #-- Encode
+            # print("src_seq", src_seq.size())
+            # print("src_pos", src_pos.size())
+
+            print("src_seq", src_seq[:, :20])
+            print("src_pos", src_pos[:, :20])
+
             src_seq, src_pos = src_seq.to(self.device), src_pos.to(self.device)
             src_enc, *_ = self.model.transformer.encoder(src_seq, src_pos)
 
@@ -184,6 +205,9 @@ class Summarizer(object):
             #n_bm = config.beam_size
             n_bm = 1
             n_inst, len_s, d_h = src_enc.size()
+
+            # print("src_enc_shape", src_enc.size())
+
             src_seq = src_seq.repeat(1, n_bm).view(n_inst * n_bm, len_s)
             src_enc = src_enc.repeat(1, n_bm, 1).view(n_inst * n_bm, len_s, d_h)
 
@@ -226,6 +250,8 @@ class Summarizer(object):
         start = time.time()
         counter = 0
         batch = self.batcher.next_batch()
+        print(batch.enc_batch)
+
         keep = True
         while batch is not None and keep:
             keep = False
