@@ -100,6 +100,8 @@ class Train(object):
         tgt_seq = dec_batch
         tgt_pos = self.get_pos_data(dec_padding_mask)
 
+        print(enc_batch)
+
         # padding is already done in previous function (see batcher.py - init_decoder_seq & init_decoder_seq - Batch class)
         self.optimizer.zero_grad()
         logits = self.model.forward(in_seq, in_pos, tgt_seq, tgt_pos)
@@ -109,7 +111,7 @@ class Train(object):
         # print(torch.max(logits, 1)[1][:10])
         # print(tgt_seq[:, :-1].contiguous().view(-1))
         # print(torch.max(logits, 1)[1][:10] - tgt_seq[:, :-1].contiguous().view(-1)[:10])
-        
+
         loss = self.loss_func(logits, tgt_seq[:, :-1].contiguous().view(-1))
 
         loss.backward()
