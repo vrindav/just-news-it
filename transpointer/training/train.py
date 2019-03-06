@@ -100,7 +100,7 @@ class Train(object):
         tgt_seq = dec_batch
         tgt_pos = self.get_pos_data(dec_padding_mask)
 
-        print(enc_batch)
+        #print(enc_batch)
         
         # padding is already done in previous function (see batcher.py - init_decoder_seq & init_decoder_seq - Batch class)
         self.optimizer.zero_grad()
