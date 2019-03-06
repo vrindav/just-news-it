@@ -24,7 +24,7 @@ class Train(object):
         self.vocab = Vocab(config.vocab_path, config.vocab_size)
         self.batcher = Batcher(config.train_data_path, self.vocab, mode='train',
                                batch_size=config.batch_size, single_pass=False)
-        #time.sleep(15)
+        time.sleep(15)
 
         train_dir = os.path.join(config.log_root, 'train_%d' % (int(time.time())))
         if not os.path.exists(train_dir):
@@ -130,7 +130,7 @@ class Train(object):
 
             if iter % 100 == 0:
                 self.summary_writer.flush()
-            print_interval = 1000
+            print_interval = 50
             if iter % print_interval == 0:
                 print('steps %d, seconds for %d batch: %.2f , loss: %f' % (iter, print_interval,
                                                                            time.time() - start, loss))
