@@ -109,10 +109,10 @@ class Train(object):
         # compute loss from logits
         # print(logits.size())
         # print(torch.max(logits, 1)[1][:10])
-        # print(tgt_seq[:, :-1].contiguous().view(-1))
-        # print(torch.max(logits, 1)[1][:10] - tgt_seq[:, :-1].contiguous().view(-1)[:10])
+        # print(tgt_seq[:, 1:].contiguous().view(-1)[:10])
+        # print(torch.max(logits, 1)[1][:10] - tgt_seq[:, 1:].contiguous().view(-1)[:10])
 
-        loss = self.loss_func(logits, tgt_seq[:, :-1].contiguous().view(-1))
+        loss = self.loss_func(logits, tgt_seq[:, 1:].contiguous().view(-1))
 
         loss.backward()
 
