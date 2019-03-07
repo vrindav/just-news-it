@@ -75,9 +75,7 @@ class BeamSearch(object):
         start = time.time()
         counter = 0
         batch = self.batcher.next_batch()
-        done = False
-        while batch is not None and not done:
-            done = True
+        while batch is not None:
             # Run beam search to get best Hypothesis
             best_summary = self.beam_search(batch)
 
