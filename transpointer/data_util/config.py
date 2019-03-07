@@ -18,8 +18,6 @@ decode_data_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/data_file
 vocab_path = os.path.join(root_dir, "Desktop/CS224N/just-news-it/data_files/vocab")
 log_root = os.path.join(root_dir, "Desktop/CS224N/just-news-it/transpointer/training/log")
 
-decode_data_path = train_data_path
-
 # Hyperparameters
 hidden_dim= 256
 emb_dim= 128

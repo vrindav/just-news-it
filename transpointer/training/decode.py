@@ -237,7 +237,7 @@ class Summarizer(object):
     def get_pos_data(self, padding_masks):
         batch_size, seq_len = padding_masks.shape
 
-        pos_data = [[ j + 1 if padding_masks[i][j] != 1 else 0 for j in range(seq_len)] for i in range(batch_size)]
+        pos_data = [[ j + 1 if padding_masks[i][j] == 1 else 0 for j in range(seq_len)] for i in range(batch_size)]
 
         pos_data = torch.tensor(pos_data, dtype=torch.long)
 
@@ -264,6 +264,7 @@ class Summarizer(object):
 
             in_seq = enc_batch
             in_pos = self.get_pos_data(enc_padding_mask)
+            print("enc_padding_mask", enc_padding_mask)
 
             print("Summarizing first batch...")
 
