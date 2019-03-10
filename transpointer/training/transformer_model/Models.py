@@ -279,7 +279,7 @@ class Transpointer(nn.Module):
 
 		# TODO: make this a linear layer
 		attn_dist = torch.sum(attn_dist, dim=1)
-		attn_dist = torch.sum(attn_dist, dim=1)
+		attn_dist = attn_dist.reshape(-1, attn_dist.size(2))
 
 		concat = torch.cat((enc_output, dec_output, dec_input), dim = 1)
 		concat = torch.mean(concat, dim=2)
