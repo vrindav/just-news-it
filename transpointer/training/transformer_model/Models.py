@@ -284,7 +284,7 @@ class Transpointer(nn.Module):
 		concat = torch.cat((enc_output, dec_output, dec_input), dim = 1)
 		concat = torch.mean(concat, dim=2)
 		p_gen = self.p_gen_linear(concat)
-		p_gen = nn.functional.sigmoid(p_gen)
+		p_gen = torch.sigmoid(p_gen)
 		print(p_gen.size())
 		p_gen = p_gen.repeat(1, config.max_dec_steps - 1).reshape(-1, 1)
 
@@ -300,6 +300,8 @@ class Transpointer(nn.Module):
 			print(extra_zeros.size())
 			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 1)
 
+		print(enc_batch_extend_vocab)
+		print(enc_batch_extend_vocab.size(), attn_dist_.size(), vocab_dist_.size())
 		final_dist = vocab_dist_.scatter_add(1, enc_batch_extend_vocab, attn_dist_)
 
 		return final_dist
