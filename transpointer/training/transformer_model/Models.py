@@ -278,9 +278,9 @@ class Transpointer(nn.Module):
 		vocab_dist_ = p_gen * seq_logit
 		attn_dist_ = (1 - p_gen) * attn_dist
 
-        if extra_zeros is not None:
-            vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 1)
+		if extra_zeros is not None:
+			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 1)
 
-        final_dist = vocab_dist_.scatter_add(1, enc_batch_extend_vocab, attn_dist_)
+		final_dist = vocab_dist_.scatter_add(1, enc_batch_extend_vocab, attn_dist_)
 
 		return final_dist
