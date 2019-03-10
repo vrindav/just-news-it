@@ -285,24 +285,18 @@ class Transpointer(nn.Module):
 		concat = torch.mean(concat, dim=2)
 		p_gen = self.p_gen_linear(concat)
 		p_gen = torch.sigmoid(p_gen)
-		print(p_gen.size())
 		p_gen = p_gen.repeat(1, config.max_dec_steps - 1).reshape(-1, 1)
 
 		seq_logit = self.tgt_word_prj(dec_output) * self.x_logit_scale
 		seq_logit = seq_logit.view(-1, seq_logit.size(2))
-		print(seq_logit.size())
 		vocab_dist_ = p_gen * seq_logit
 		attn_dist_ = (1 - p_gen) * attn_dist
 
 		if extra_zeros is not None:
-			print(extra_zeros.size())
 			extra_zeros = extra_zeros.repeat(1, config.max_dec_steps - 1).reshape(-1, extra_zeros.size(1))
-			print(extra_zeros.size())
 			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 1)
 
-		#print(enc_batch_extend_vocab)
 		enc_batch_extend_vocab = enc_batch_extend_vocab.repeat(1, config.max_dec_steps - 1).reshape(-1, config.max_article_len)
-		print(enc_batch_extend_vocab.size(), attn_dist_.size(), vocab_dist_.size())
 		final_dist = vocab_dist_.scatter_add(1, enc_batch_extend_vocab, attn_dist_)
 
 		return final_dist

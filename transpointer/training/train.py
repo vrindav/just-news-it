@@ -100,29 +100,13 @@ class Train(object):
         tgt_seq = dec_batch
         tgt_pos = self.get_pos_data(dec_padding_mask)
 
-        #print(enc_batch)
         
         # padding is already done in previous function (see batcher.py - init_decoder_seq & init_decoder_seq - Batch class)
         self.optimizer.zero_grad()
         logits = self.model.forward(in_seq, in_pos, tgt_seq, tgt_pos, extra_zeros, enc_batch_extend_vocab)
 
         # compute loss from logits
-        # print(logits.size())
-        # print(torch.max(logits, 1)[1][:10])
-        # print(tgt_seq[:, 1:].contiguous().view(-1)[:10])
-        # print(torch.max(logits, 1)[1][:10] - tgt_seq[:, 1:].contiguous().view(-1)[:10])
-
-        #tgt_reshaped = tgt_seq[:, 1:].reshape(-1).unsqueeze(dim = 1)
-        #print(tgt_reshaped.size(), logits.size())
-        #gold_probs = torch.gather(logits, 1, tgt_reshaped).squeeze()
-        #step_loss = -torch.log(gold_probs + config.eps)
-
-        #loss = torch.mean(step_loss)
-
         loss = self.loss_func(logits, tgt_seq[:, 1:].contiguous().view(-1))
-        print(loss)
-        print(logits.size(), tgt_seq[:, 1:].contiguous().view(-1).size())
-        #loss = loss.view(-1, 1)
         loss.backward()
 
         #self.norm = clip_grad_norm_(self.model.parameters(), config.max_grad_norm) # ----> this line causes error
