@@ -115,7 +115,7 @@ class Train(object):
         loss = self.loss_func(logits, tgt_seq[:, 1:].contiguous().view(-1))
         print(loss)
         print(logits.size(), tgt_seq[:, 1:].contiguous().view(-1).size())
-
+        loss = loss.view(-1, 1)
         loss.backward()
 
         #self.norm = clip_grad_norm_(self.model.parameters(), config.max_grad_norm) # ----> this line causes error
