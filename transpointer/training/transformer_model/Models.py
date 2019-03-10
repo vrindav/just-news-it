@@ -273,25 +273,24 @@ class Transpointer(nn.Module):
 		enc_output, *_ = self.encoder(src_seq, src_pos)
 		dec_output, dec_input, attn_dist = self.decoder(tgt_seq, tgt_pos, src_seq, enc_output, return_dec_input = True)
 		
-		print(attn_dist.size())
-		attn_dist = attn_dist.reshape(self.n_head, config.batch_size, config.max_dec_steps - 1, config.max_article_len)
+		# Reshape attn_dist to be batch_size by max_article_len
+		attn_dist = attn_dist.reshape(self.n_head, config.batch_size, config.max_dec_steps - 1, config.max_article_len) # -1 because of decoder shift
 		attn_dist = attn_dist.permute(1, 0, 2, 3)
-		print(attn_dist.size())
 
 		# TODO: make this a linear layer
 		attn_dist = torch.sum(attn_dist, dim=1)
 		attn_dist = torch.sum(attn_dist, dim=1)
-		print(attn_dist.size())
 
 		concat = torch.cat((enc_output, dec_output, dec_input), dim = 1)
-		print(concat.size())
 		concat = torch.mean(concat, dim=2)
-		print(concat.size())
 		p_gen = self.p_gen_linear(concat)
 		p_gen = nn.functional.sigmoid(p_gen)
+		print(p_gen.size())
+
 
 		seq_logit = self.tgt_word_prj(dec_output) * self.x_logit_scale
 		seq_logit = seq_logit.view(-1, seq_logit.size(2))
+		print(seq_logit.size())
 		vocab_dist_ = p_gen * seq_logit
 		attn_dist_ = (1 - p_gen) * attn_dist
 
