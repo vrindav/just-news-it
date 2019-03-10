@@ -296,7 +296,7 @@ class Transpointer(nn.Module):
 
 		if extra_zeros is not None:
 			print(extra_zeros.size())
-			extra_zeros = extra_zeros.repeat(1, config.max_dec_steps - 1).reshape(-1, extra_zeros.size(2))
+			extra_zeros = extra_zeros.repeat(1, config.max_dec_steps - 1).reshape(-1, extra_zeros.size(1))
 			print(extra_zeros.size())
 			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 1)
 
