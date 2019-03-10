@@ -260,7 +260,7 @@ class Transpointer(nn.Module):
 			"To share word embedding table, the vocabulary size of src/tgt shall be the same."
 			self.encoder.src_word_emb.weight = self.decoder.tgt_word_emb.weight
 
-		self.p_gen_linear = nn.Linear(config.max_dec_step * 2 - 2 + config.max_article_len, 1)
+		self.p_gen_linear = nn.Linear(config.max_dec_steps * 2 - 2 + config.max_article_len, 1)
 
 	def forward(self, src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros, enc_batch_extend_vocab):
 
