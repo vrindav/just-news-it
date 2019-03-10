@@ -113,7 +113,8 @@ class Train(object):
         # print(torch.max(logits, 1)[1][:10] - tgt_seq[:, 1:].contiguous().view(-1)[:10])
 
         loss = self.loss_func(logits, tgt_seq[:, 1:].contiguous().view(-1))
-
+        print(loss)
+        
         loss.backward()
 
         #self.norm = clip_grad_norm_(self.model.parameters(), config.max_grad_norm) # ----> this line causes error
