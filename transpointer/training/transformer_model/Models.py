@@ -286,7 +286,8 @@ class Transpointer(nn.Module):
 		p_gen = self.p_gen_linear(concat)
 		p_gen = nn.functional.sigmoid(p_gen)
 		print(p_gen.size())
-
+		p_gen = p_gen.repeat(1, config.max_dec_steps - 1).reshape(-1, 1)
+		print(p_gen.size())
 
 		seq_logit = self.tgt_word_prj(dec_output) * self.x_logit_scale
 		seq_logit = seq_logit.view(-1, seq_logit.size(2))
