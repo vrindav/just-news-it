@@ -5,6 +5,10 @@ import numpy as np
 import transformer_model.Constants as Constants
 from transformer_model.Layers import EncoderLayer, DecoderLayer
 
+import sys
+sys.path.insert(0, '../../')
+from data_utils import config
+
 __author__ = "Yu-Hsiang Huang"
 
 def get_non_pad_mask(seq):
@@ -255,7 +259,6 @@ class Transpointer(nn.Module):
 			assert n_src_vocab == n_tgt_vocab, \
 			"To share word embedding table, the vocabulary size of src/tgt shall be the same."
 			self.encoder.src_word_emb.weight = self.decoder.tgt_word_emb.weight
-
 
 		self.p_gen_linear = nn.Linear(config.max_dec_step * 2 - 2 + config.max_article_len, 1)
 
