@@ -26,7 +26,7 @@ class Model(nn.Module):
     def __init__(self, n_src_vocab, n_tgt_vocab, len_max_seq, model_file_path=None, is_eval=False):
         super(Model, self).__init__()
 
-        transformer = tm.Transformer(n_src_vocab, n_tgt_vocab, len_max_seq)
+        transformer = tm.Transformer(n_src_vocab, n_tgt_vocab, len_max_seq, n_head=16)
 
             # d_word_vec=512, d_model=512, d_inner=2048,
             # n_layers=6, n_head=8, d_k=64, d_v=64, dropout=0.1,

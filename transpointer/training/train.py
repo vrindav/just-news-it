@@ -116,8 +116,8 @@ class Train(object):
 
         loss.backward()
 
-        self.norm = clip_grad_norm_(self.model.parameters(), config.max_grad_norm) # ----> this line causes error
-        clip_grad_norm_(self.model.parameters(), config.max_grad_norm)
+        #self.norm = clip_grad_norm_(self.model.parameters(), config.max_grad_norm) # ----> this line causes error
+        #clip_grad_norm_(self.model.parameters(), config.max_grad_norm)
 
         self.optimizer.step()
 
