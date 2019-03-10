@@ -287,7 +287,6 @@ class Transpointer(nn.Module):
 		p_gen = nn.functional.sigmoid(p_gen)
 		print(p_gen.size())
 		p_gen = p_gen.repeat(1, config.max_dec_steps - 1).reshape(-1, 1)
-		print(p_gen.size())
 
 		seq_logit = self.tgt_word_prj(dec_output) * self.x_logit_scale
 		seq_logit = seq_logit.view(-1, seq_logit.size(2))
@@ -296,6 +295,7 @@ class Transpointer(nn.Module):
 		attn_dist_ = (1 - p_gen) * attn_dist
 
 		if extra_zeros is not None:
+			extra_zeros = extra_zeros.reshape(-1, extra_zeros.size(2))
 			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 1)
 
 		final_dist = vocab_dist_.scatter_add(1, enc_batch_extend_vocab, attn_dist_)
