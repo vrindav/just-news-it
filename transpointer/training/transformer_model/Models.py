@@ -152,8 +152,7 @@ class Decoder(nn.Module):
 		#if return_attns:
 		#    return dec_output, dec_slf_attn_list, dec_enc_attn_list
 		if return_dec_input:
-			print(dec_output.size(), dec_input.size(), enc_output.size())
-			return dec_output, dec_input
+			return dec_output, dec_input, dec_enc_attn_list[-1]
 		return dec_output, 
 
 class Transformer(nn.Module):
@@ -258,19 +257,30 @@ class Transpointer(nn.Module):
 			self.encoder.src_word_emb.weight = self.decoder.tgt_word_emb.weight
 
 
-		#self.p_gen_linear = nn.Linear(config.hidden_dim * 4 + config.emb_dim, 1)
+		self.p_gen_linear = nn.Linear(config.max_dec_step * 2 - 2 + config.max_article_len, 1)
 
-	def forward(self, src_seq, src_pos, tgt_seq, tgt_pos):
+	def forward(self, src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros, enc_batch_extend_vocab):
 
 		batch_size, max_seq_len = src_seq.size()
 
 		tgt_seq, tgt_pos = tgt_seq[:, :-1], tgt_pos[:, :-1]
 
 		enc_output, *_ = self.encoder(src_seq, src_pos)
-		dec_output, dec_input = self.decoder(tgt_seq, tgt_pos, src_seq, enc_output, return_dec_input = True)
+		dec_output, dec_input, attn_dist = self.decoder(tgt_seq, tgt_pos, src_seq, enc_output, return_dec_input = True)
+		print(attn_dist.size())
 
+		concat = torch.cat((enc_output, dec_output, dec_input), dim = 1)
+		p_gen = self.p_gen_linear(concat)
+		p_gen = nn.functional.sigmoid(p_gen)
 
-				
 		seq_logit = self.tgt_word_prj(dec_output) * self.x_logit_scale
+		seq_logit = seq_logit.view(-1, seq_logit.size(2))
+		vocab_dist_ = p_gen * seq_logit
+		attn_dist_ = (1 - p_gen) * attn_dist
 
-		return seq_logit.view(-1, seq_logit.size(2))
+        if extra_zeros is not None:
+            vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 1)
+
+        final_dist = vocab_dist_.scatter_add(1, enc_batch_extend_vocab, attn_dist_)
+
+		return final_dist

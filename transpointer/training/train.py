@@ -104,7 +104,7 @@ class Train(object):
         
         # padding is already done in previous function (see batcher.py - init_decoder_seq & init_decoder_seq - Batch class)
         self.optimizer.zero_grad()
-        logits = self.model.forward(in_seq, in_pos, tgt_seq, tgt_pos)
+        logits = self.model.forward(in_seq, in_pos, tgt_seq, tgt_pos, extra_zeros, enc_batch_extend_vocab)
 
         # compute loss from logits
         # print(logits.size())
