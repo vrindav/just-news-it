@@ -228,6 +228,8 @@ class Transpointer(nn.Module):
 
 		super().__init__()
 
+		self.n_head = n_head
+
 		self.encoder = Encoder(
 			n_src_vocab=n_src_vocab, len_max_seq=len_max_seq,
 			d_word_vec=d_word_vec, d_model=d_model, d_inner=d_inner,
@@ -270,10 +272,20 @@ class Transpointer(nn.Module):
 
 		enc_output, *_ = self.encoder(src_seq, src_pos)
 		dec_output, dec_input, attn_dist = self.decoder(tgt_seq, tgt_pos, src_seq, enc_output, return_dec_input = True)
+		
 		print(attn_dist.size())
-		print(attn_dist)
+		attn_dist = attn_dist.reshape(self.n_head, config.batch_size, config.max_dec_steps, config.max_article_len)
+		attn_dist = attn_dist.permute(1, 0, 2, 3)
+		print(attn_dist.size())
+
+		# TODO: make this a linear layer
+		attn_dist = torch.sum(attn_dist, dim=1)
+		attn_dist = torch.sum(attn_dist, dim=1)
+		print(attn_dist.size()
 
 		concat = torch.cat((enc_output, dec_output, dec_input), dim = 1)
+		print(concat.size())
+		concat = torch.mean(concat, dim=2)
 		print(concat.size())
 		p_gen = self.p_gen_linear(concat)
 		p_gen = nn.functional.sigmoid(p_gen)
