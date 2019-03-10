@@ -258,7 +258,7 @@ class Transpointer(nn.Module):
 			self.encoder.src_word_emb.weight = self.decoder.tgt_word_emb.weight
 
 
-		self.p_gen_linear = nn.Linear(config.hidden_dim * 4 + config.emb_dim, 1)
+		#self.p_gen_linear = nn.Linear(config.hidden_dim * 4 + config.emb_dim, 1)
 
 	def forward(self, src_seq, src_pos, tgt_seq, tgt_pos):
 
