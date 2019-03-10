@@ -295,6 +295,7 @@ class Transpointer(nn.Module):
 		attn_dist_ = (1 - p_gen) * attn_dist
 
 		if extra_zeros is not None:
+			print(extra_zeros.size())
 			extra_zeros = extra_zeros.reshape(-1, extra_zeros.size(2))
 			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 1)
 
