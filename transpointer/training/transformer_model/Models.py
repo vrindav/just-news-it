@@ -271,8 +271,10 @@ class Transpointer(nn.Module):
 		enc_output, *_ = self.encoder(src_seq, src_pos)
 		dec_output, dec_input, attn_dist = self.decoder(tgt_seq, tgt_pos, src_seq, enc_output, return_dec_input = True)
 		print(attn_dist.size())
+		print(attn_dist)
 
 		concat = torch.cat((enc_output, dec_output, dec_input), dim = 1)
+		print(concat.size())
 		p_gen = self.p_gen_linear(concat)
 		p_gen = nn.functional.sigmoid(p_gen)
 
