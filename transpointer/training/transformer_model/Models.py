@@ -274,7 +274,7 @@ class Transpointer(nn.Module):
 		dec_output, dec_input, attn_dist = self.decoder(tgt_seq, tgt_pos, src_seq, enc_output, return_dec_input = True)
 		
 		print(attn_dist.size())
-		attn_dist = attn_dist.reshape(self.n_head, config.batch_size, config.max_dec_steps, config.max_article_len)
+		attn_dist = attn_dist.reshape(self.n_head, config.batch_size, config.max_dec_steps - 1, config.max_article_len)
 		attn_dist = attn_dist.permute(1, 0, 2, 3)
 		print(attn_dist.size())
 
