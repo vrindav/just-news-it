@@ -7,7 +7,7 @@ from transformer_model.Layers import EncoderLayer, DecoderLayer
 
 import sys
 sys.path.insert(0, '../../')
-from data_utils import config
+from data_util import config
 
 __author__ = "Yu-Hsiang Huang"
 
