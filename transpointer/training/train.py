@@ -114,7 +114,7 @@ class Train(object):
 
         tgt_reshaped = tgt_seq[:, 1:].reshape(-1)
         print(tgt_reshaped.size(), logits.size())
-        gold_probs = torch.gather(logits, 1, tgt_reshaped).squeeze()
+        gold_probs = torch.gather(logits, 1, tgt_reshaped.unsqueeze(dim = 1)).squeeze()
         step_loss = -torch.log(gold_probs + config.eps)
 
         loss = torch.mean(step_loss)
