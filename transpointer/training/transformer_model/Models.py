@@ -300,7 +300,8 @@ class Transpointer(nn.Module):
 			print(extra_zeros.size())
 			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 1)
 
-		print(enc_batch_extend_vocab)
+		#print(enc_batch_extend_vocab)
+		enc_batch_extend_vocab = enc_batch_extend_vocab.repeat(1, config.max_dec_steps - 1).reshape(-1, config.max_article_len)
 		print(enc_batch_extend_vocab.size(), attn_dist_.size(), vocab_dist_.size())
 		final_dist = vocab_dist_.scatter_add(1, enc_batch_extend_vocab, attn_dist_)
 
