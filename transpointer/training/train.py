@@ -112,7 +112,7 @@ class Train(object):
 
         print(logits.max(1)[1])
         print('\n')
-        print(tgt_seq[:, 1:].contiguous().view(-1)[:10])
+        print(tgt_seq[:, 1:].contiguous().view(-1)[-10:])
         #self.norm = clip_grad_norm_(self.model.parameters(), config.max_grad_norm) # ----> this line causes error
         #clip_grad_norm_(self.model.parameters(), config.max_grad_norm)
 
