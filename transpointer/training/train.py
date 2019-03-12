@@ -134,8 +134,13 @@ class Train(object):
         print("Starting training...")
         
         start = time.time()
+        only_batch = None
         while iter < n_iters:
             batch = self.batcher.next_batch()
+            if iter == 0:
+                only_batch = batch
+            else:
+                batch = only_batch
 
             loss = self.train_one_batch(batch)
 
