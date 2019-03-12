@@ -94,6 +94,8 @@ class Train(object):
             get_input_from_batch(batch, use_cuda)
         dec_batch, dec_padding_mask, max_dec_len, dec_lens_var, target_batch = \
             get_output_from_batch(batch, use_cuda)
+       # print(target_batch[:, 1:].contiguous().view(-1)[-10:])
+       # print(dec_batch[:, 1:].contiguous().view(-1)[-10:])
 
         in_seq = enc_batch
         in_pos = self.get_pos_data(enc_padding_mask)
