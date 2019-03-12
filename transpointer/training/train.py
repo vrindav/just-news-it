@@ -55,8 +55,8 @@ class Train(object):
 
         params = list(self.model.parameters())
         initial_lr = config.lr_coverage if config.is_coverage else config.lr
-        self.optimizer = Adam(params, lr=initial_lr)
-        #self.optimizer = Adagrad(params, lr=initial_lr, initial_accumulator_value=config.adagrad_init_acc)
+        #self.optimizer = Adam(params, lr=initial_lr)
+        self.optimizer = Adagrad(params, lr=initial_lr, initial_accumulator_value=config.adagrad_init_acc)
         self.loss_func = torch.nn.CrossEntropyLoss(ignore_index = 1)
 
         start_iter, start_loss = 0, 0
