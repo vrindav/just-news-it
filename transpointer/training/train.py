@@ -89,7 +89,7 @@ class Train(object):
 
         return pos_data
 
-    def train_one_batch(self, batch):
+    def train_one_batch(self, batch, iter):
         enc_batch, enc_padding_mask, enc_lens, enc_batch_extend_vocab, extra_zeros, c_t_1, coverage = \
             get_input_from_batch(batch, use_cuda)
         dec_batch, dec_padding_mask, max_dec_len, dec_lens_var, target_batch = \
@@ -111,6 +111,16 @@ class Train(object):
 
         # compute loss from logits
         loss = self.loss_func(logits, target_batch.contiguous().view(-1))
+
+        if iter % 50 == 0:
+            print(loss)
+            print('\n')
+            print(logits.max(1)[1])
+            print('\n')
+            print(target_batch.contiguous().view(-1)[:10])
+            print('\n')
+            print(target_batch.contiguous().view(-1)[-10:])
+
         loss.backward()
 
         #print(logits.max(1)[1])
@@ -142,7 +152,7 @@ class Train(object):
             else:
                 batch = only_batch
 
-            loss = self.train_one_batch(batch)
+            loss = self.train_one_batch(batch, iter)
 
             running_avg_loss = calc_running_avg_loss(loss, running_avg_loss, self.summary_writer, iter)
             iter += 1
