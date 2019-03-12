@@ -1,0 +1,29 @@
+Should technologists prevent their tools from being used to wage war?
+
+This question was answered with a furious yes at Google recently, when more than 3,000 employees signed a memo protesting the use of the company’s algorithms in Project Maven, a Defense Department effort to automatically identify objects in video. Citing the company motto, “Don’t be evil,” the employees asked their chief executive, Sundar Pichai, to stay out of “the business of war.”
+
+Other critics of Silicon Valley-Pentagon partnerships have made a different argument: not that collaboration risks compromising Silicon Valley values, but that contact with the military’s inefficient processes would contaminate the fast-moving culture of Silicon Valley.
+
+Both arguments misunderstand the nature of technology and the military’s role in accelerating the commercial ascendancy of the United States. A closer relationship between Silicon Valley and the Pentagon is good for industry and for national security — as well as for the debate we as American citizens must have about how technology is used, especially in war.
+
+Google’s engineers should be applauded for raising questions about how the machine-learning algorithms they invented are employed in Project Maven. Their aspiration that Google never “build warfare technology” or “outsource the moral responsibility” for using technology is a noble goal. It would be morally convenient if technology for war could be cleaved so cleanly from technology for everything else. But it can’t be.
+
+Silicon Valley is already at war in the sense that the broad classes of technology it invents for search, storage and pattern recognition have inherent military uses. The same machine-learning algorithms developed to categorize images on the internet can be used to identity terrorist activity. Technology circulates between government and industry, between times of peace and war, in ways no corporate policy can turn on or off.
+
+Engineers in Silicon Valley are learning what students of history have long known: Technology often springs forth in unforeseen ways, wreaking havoc in some cases and providing salvation in others. Those who uncork the proverbial genie cannot control its future by decree.
+
+But all hope for accountability is not lost. The controversy over Project Maven is teaching us an important civics lesson about who governs technology. Google exists in a democracy whose elected representatives ultimately decide whether to use force and through what means. The best way to influence how the United States fights wars is not through company policy; it is by the ballot box.
+
+Because the United States military is a product of our democracy, it aims to fight with precision and a focus on limiting harm to innocent civilians — to a far greater extent than is the case with other, less democratic major powers. The technology behind Project Maven promises to reduce collateral damage still further, making any decision by Google to withhold it morally complex.
+
+Since 2015, the Pentagon’s engagement with Silicon Valley has been conducted through a group called Defense Innovation Unit Experimental, which I helped lead from 2016 until last year, that integrates technology from start-ups into military missions. The group arose not from the paranoid war room of “Dr. Strangelove” but rather from the more prosaic reality that most innovation today — unlike that of two generations ago — takes place in the commercial sector, not government labs.
+
+Apple and Google each have a market capitalization twice as large as that of the entire United States defense industry. The only way the military can continue protecting our nation and preserving the relative peace the world has enjoyed since World War II is by integrating the newest technology into its systems. Denying the military access to this technology would over time cripple it, which would be calamitous for the nation and the world.
+
+A partnership with the Pentagon is also in companies’ interest. Working on important, tough military problems helps refine their products, improving the global competitiveness of American industry. Even beyond the usual incentives created by federal research and development, which helped spur innovations like Siri and the internet, there is value to the industry in having access to the military’s operational testing and unique data sets.
+
+The debate at Google is vital and timely. Engineers everywhere should closely follow how the military uses new classes of technology and object if those uses violate our values. But if the goal of Silicon Valley technologists is to wall themselves off from the Pentagon’s most pressing needs, they must concede that this will hurt both our security and industrial strength.
+
+Moving past the current debate requires all sides to focus on the values we hold in common. Those in uniform working to protect the nation from a threatening world are just as worried by how novel technologies could be misused as the engineers who create them.
+
+They also hold dear a motto of “Don’t be evil.” Their commitment to this ideal goes beyond a corporate code of conduct. It begins with an oath to uphold the Constitution and a duty that may require the ultimate sacrifice to preserve our form of self-government. That is a powerful basis for shared concern about the new technologies that will ineluctably figure in peace and in war.
