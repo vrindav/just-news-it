@@ -208,7 +208,7 @@ class Transformer(nn.Module):
 
 		batch_size, max_seq_len = src_seq.size()
 
-		tgt_seq, tgt_pos = tgt_seq[:, :-1], tgt_pos[:, :-1]
+		#tgt_seq, tgt_pos = tgt_seq[:, :-1], tgt_pos[:, :-1]
 
 		enc_output, *_ = self.encoder(src_seq, src_pos)
 		dec_output, *_ = self.decoder(tgt_seq, tgt_pos, src_seq, enc_output)
@@ -268,7 +268,7 @@ class Transpointer(nn.Module):
 
 		batch_size, max_seq_len = src_seq.size()
 
-		tgt_seq, tgt_pos = tgt_seq[:, :-1], tgt_pos[:, :-1]
+		#tgt_seq, tgt_pos = tgt_seq[:, :-1], tgt_pos[:, :-1]
 
 		enc_output, *_ = self.encoder(src_seq, src_pos)
 		dec_output, dec_input, attn_dist = self.decoder(tgt_seq, tgt_pos, src_seq, enc_output, return_dec_input = True)

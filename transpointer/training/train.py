@@ -110,7 +110,7 @@ class Train(object):
 
 
         # compute loss from logits
-        loss = self.loss_func(logits, tgt_seq[:, 1:].contiguous().view(-1))
+        loss = self.loss_func(logits, target_batch.contiguous().view(-1))
         loss.backward()
 
         #print(logits.max(1)[1])
