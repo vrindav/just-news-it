@@ -113,7 +113,7 @@ class Train(object):
         # compute loss from logits
         loss = self.loss_func(logits, target_batch.contiguous().view(-1))
 
-        if iter % 50 == 0:
+        if iter % 50 == 0 amd False:
             print(loss)
             print('\n')
             print(logits.max(1)[1])
@@ -145,13 +145,16 @@ class Train(object):
         print("Starting training...")
         
         start = time.time()
-        only_batch = None
+
+        #only_batch = None
+
         while iter < n_iters:
             batch = self.batcher.next_batch()
-            if iter == 0:
-                only_batch = batch
-            else:
-                batch = only_batch
+            
+            # if iter == 0:
+            #     only_batch = batch
+            # else:
+            #     batch = only_batch
 
             loss = self.train_one_batch(batch, iter)
 
