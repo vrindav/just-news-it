@@ -1,9 +1,10 @@
-#Except for the pytorch part content of this file is copied from https://github.com/abisee/pointer-generator/blob/master/
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
+#Except for the pytorch part content of this file is copied from https://github.com/abisee/pointer-generator/blob/master/
 from __future__ import unicode_literals, print_function, division
 
-import sys
-
+import re
 #reload(sys)
 #sys.setdefaultencoding('utf8')
 
@@ -16,16 +17,40 @@ import time
 import torch
 from torch.autograd import Variable
 
-from data_util.batcher import Batcher, Batch
+from data_util.batcher import Batcher, Batch, Example
 from data_util.data import Vocab
 from data_util import data, config
 from model import Model
-from data_util.utils import write_for_rouge, rouge_eval, rouge_log
+from data_util.utils import write_for_rouge, rouge_eval, rouge_log, make_html_safe
 from train_util import get_input_from_batch
 import glob
 
 
 use_cuda = config.use_gpu and torch.cuda.is_available()
+
+def write_results(decoded_words, ex_index, _rouge_dec_dir):
+  decoded_sents = []
+  while len(decoded_words) > 0:
+    try:
+      fst_period_idx = decoded_words.index(".")
+    except ValueError:
+      fst_period_idx = len(decoded_words)
+    sent = decoded_words[:fst_period_idx + 1]
+    decoded_words = decoded_words[fst_period_idx + 1:]
+    decoded_sents.append(' '.join(sent))
+
+  # pyrouge calls a perl script that puts the data into HTML files.
+  # Therefore we need to make our output HTML safe.
+  print(decoded_sents)
+  decoded_sents = [make_html_safe(w) for w in decoded_sents]
+
+  print(decoded_sents)
+
+  decoded_file = os.path.join(_rouge_dec_dir, "%06d_decoded.txt" % ex_index)
+
+  with open(decoded_file, "w") as f:
+    for idx, sent in enumerate(decoded_sents):
+      f.write(sent) if idx == len(decoded_sents) - 1 else f.write(sent + "\n")
 
 class Beam(object):
   def __init__(self, tokens, log_probs, state, context, coverage):
@@ -64,25 +89,33 @@ class BeamSearch(object):
         self.vocab = Vocab(config.vocab_path, config.vocab_size)
         '''self.batcher = Batcher(config.oped_data_path, self.vocab, mode='decode',
                                batch_size=config.beam_size, single_pass=True)'''
-        self.batches = read_opeds(config.oped_data_path, self.vocab, config.beam_size)
+        self.batches = self.read_opeds(config.oped_data_path, self.vocab, config.beam_size)
 
         self.model = Model(model_file_path, is_eval=True)
 
-    def read_opeds(config_path, vocab, beam_size):
+    def read_opeds(self, config_path, vocab, beam_size):
         file_list = glob.glob(config_path)
+        #file_list = os.listdir(config_path)
         batch_list = []
         for file in file_list:
             with open(file, 'rb') as f:
-                text = f.read()
-                text = text.split()
-                if len(text) > config.max_enc_steps:
-                    text = text[:config.max_enc_steps]
-                enc_input = [vocab.word2id(w) for w in text]
-                assert(sum(enc_input) != 0)
+                text = f.read().lower().decode('utf-8')
+                text = re.sub('\n', '', text)
+                text = re.sub(r'([.,!?()"])', r' \1 ', text).encode('utf-8')
+                print(text)
 
-                enc_input = [enc_input for i in range(beam_size)]
+                ex = Example(text, [], vocab)
+
+                # text = text.split()
+                # if len(text) > config.max_enc_steps:
+                #     text = text[:config.max_enc_steps]
+                # enc_input = [vocab.word2id(w.decode('utf-8')) for w in text]
+                # assert(sum(enc_input) != 0)
+
+                enc_input = [ex for _ in range(beam_size)]
                 batch = Batch(enc_input, vocab, beam_size)
                 batch_list.append(batch)
+                print(batch.enc_batch)
         return batch_list
 
     def sort_beams(self, beams):
@@ -108,8 +141,7 @@ class BeamSearch(object):
             except ValueError:
                 decoded_words = decoded_words
 
-            write_for_rouge(original_abstract_sents, decoded_words, counter,
-                            self._rouge_ref_dir, self._rouge_dec_dir)
+            write_results(decoded_words, counter, self._rouge_dec_dir)
             counter += 1
             if counter % 1000 == 0:
                 print('%d example in %d sec'%(counter, time.time() - start))
