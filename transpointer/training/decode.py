@@ -46,6 +46,7 @@ class Summarizer(object):
         self.opt = opt
         self.device = torch.device('cuda' if use_cuda else 'cpu')
 
+        print("Max article len", config.max_article_len)
         model = Model(config.vocab_size, config.vocab_size, config.max_article_len)
 
         checkpoint = torch.load(opt["model_file_path"], map_location= lambda storage, location: storage)
@@ -169,7 +170,7 @@ class Summarizer(object):
             dec_seq = prepare_beam_dec_seq(inst_dec_beams, len_dec_seq)
             dec_pos = prepare_beam_dec_pos(len_dec_seq, n_active_inst, n_bm)
 
-            print("first dec_seq", dec_seq)
+            #print("first dec_seq", dec_seq)
             # print("first dec_pos", dec_pos)
 
             word_prob = predict_word(dec_seq, dec_pos, src_seq, enc_output, n_active_inst, n_bm)
@@ -195,8 +196,8 @@ class Summarizer(object):
             # print("src_seq", src_seq.size())
             # print("src_pos", src_pos.size())
 
-            print("src_seq", src_seq[:, :20])
-            print("src_pos", src_pos[:, :20])
+            #print("src_seq", src_seq[:, :20])
+            #print("src_pos", src_pos[:, :20])
 
             src_seq, src_pos = src_seq.to(self.device), src_pos.to(self.device)
             src_enc, *_ = self.model.transformer.encoder(src_seq, src_pos)
@@ -250,11 +251,11 @@ class Summarizer(object):
         start = time.time()
         counter = 0
         batch = self.batcher.next_batch()
-        print(batch.enc_batch)
+        #print(batch.enc_batch)
 
         keep = True
         while batch is not None and keep:
-            keep = False
+            #keep = False # one batch only
 
             # Run beam search to get best Hypothesis
             enc_batch, enc_padding_mask, enc_lens, enc_batch_extend_vocab, extra_zeros, c_t_0, coverage_t_0 = get_input_from_batch(batch, use_cuda)
@@ -264,13 +265,11 @@ class Summarizer(object):
 
             in_seq = enc_batch
             in_pos = self.get_pos_data(enc_padding_mask)
-            print("enc_padding_mask", enc_padding_mask)
+            #print("enc_padding_mask", enc_padding_mask)
 
-            print("Summarizing first batch...")
+            #print("Summarizing one batch...")
 
             batch_hyp, batch_scores = self.summarize_batch(in_seq, in_pos)
-
-            print("Summarized one batch!")
 
             # Extract the output ids from the hypothesis and convert back to words
             output_words = np.array(batch_hyp)
@@ -287,7 +286,7 @@ class Summarizer(object):
                                 self._rouge_ref_dir, self._rouge_dec_dir)
                 counter += 1
 
-            if counter % 1 == 0:
+            if counter % 500 == 0:
                 print('%d example in %d sec'%(counter, time.time() - start))
                 start = time.time()
 

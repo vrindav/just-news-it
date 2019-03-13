@@ -26,7 +26,8 @@ class Model(nn.Module):
     def __init__(self, n_src_vocab, n_tgt_vocab, len_max_seq, model_file_path=None, is_eval=False):
         super(Model, self).__init__()
 
-        transformer = tm.Transpointer(n_src_vocab, n_tgt_vocab, len_max_seq)
+        transformer = tm.Transformer(n_src_vocab, n_tgt_vocab, len_max_seq)
+        #transformer = tm.Transpointer(n_src_vocab, n_tgt_vocab, len_max_seq)
 
             # d_word_vec=512, d_model=512, d_inner=2048,
             # n_layers=6, n_head=8, d_k=64, d_v=64, dropout=0.1,
@@ -39,8 +40,10 @@ class Model(nn.Module):
 
         self.transformer = transformer
 
-    def forward(self, src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros=None, enc_batch_extend_vocab=None):
+    def forward(self, src_seq, src_pos, tgt_seq, tgt_pos):
+    #def forward(self, src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros=None, enc_batch_extend_vocab=None):
 
-        return self.transformer(src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros, enc_batch_extend_vocab)
+        return self.transformer(src_seq, src_pos, tgt_seq, tgt_pos)
+        #return self.transformer(src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros, enc_batch_extend_vocab)
 
 
