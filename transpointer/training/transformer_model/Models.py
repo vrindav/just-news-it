@@ -274,7 +274,7 @@ class Transpointer(nn.Module):
 		dec_output, dec_input, attn_dist = self.decoder(tgt_seq, tgt_pos, src_seq, enc_output, return_dec_input = True)
 		
 		# Reshape attn_dist to be batch_size by max_article_len
-		attn_dist = attn_dist.reshape(self.n_head, config.batch_size, config.max_dec_steps - 1, config.max_article_len) # -1 because of decoder shift
+		attn_dist = attn_dist.reshape(self.n_head, config.batch_size, config.max_dec_steps, config.max_article_len) # -1 because of decoder shift
 		attn_dist = attn_dist.permute(1, 0, 2, 3)
 
 		# TODO: make this a linear layer
@@ -285,7 +285,7 @@ class Transpointer(nn.Module):
 		concat = torch.mean(concat, dim=2)
 		p_gen = self.p_gen_linear(concat)
 		p_gen = torch.sigmoid(p_gen)
-		p_gen = p_gen.repeat(1, config.max_dec_steps - 1).reshape(-1, 1)
+		p_gen = p_gen.repeat(1, config.max_dec_steps).reshape(-1, 1)
 
 		seq_logit = self.tgt_word_prj(dec_output) * self.x_logit_scale
 		seq_logit = seq_logit.view(-1, seq_logit.size(2))
@@ -293,10 +293,10 @@ class Transpointer(nn.Module):
 		attn_dist_ = (1 - p_gen) * attn_dist
 
 		if extra_zeros is not None:
-			extra_zeros = extra_zeros.repeat(1, config.max_dec_steps - 1).reshape(-1, extra_zeros.size(1))
+			extra_zeros = extra_zeros.repeat(1, config.max_dec_steps).reshape(-1, extra_zeros.size(1))
 			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 1)
 
-		enc_batch_extend_vocab = enc_batch_extend_vocab.repeat(1, config.max_dec_steps - 1).reshape(-1, config.max_article_len)
+		enc_batch_extend_vocab = enc_batch_extend_vocab.repeat(1, config.max_dec_steps).reshape(-1, config.max_article_len)
 		final_dist = vocab_dist_.scatter_add(1, enc_batch_extend_vocab, attn_dist_)
 
 		return final_dist
