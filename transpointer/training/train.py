@@ -11,7 +11,7 @@ import torch
 from model import Model
 from torch.nn.utils import clip_grad_norm_
 
-from torch.optim import Adam
+from torch.optim import Adam, Adagrad
 
 from data_util import config
 from data_util.batcher import Batcher
@@ -55,8 +55,8 @@ class Train(object):
 
         params = list(self.model.parameters())
         initial_lr = config.lr_coverage if config.is_coverage else config.lr
-        self.optimizer = Adam(params, lr=initial_lr)
-        #self.optimizer = Adagrad(params, lr=initial_lr, initial_accumulator_value=config.adagrad_init_acc)
+        #self.optimizer = Adam(params, lr=initial_lr)
+        self.optimizer = Adagrad(params, lr=initial_lr, initial_accumulator_value=config.adagrad_init_acc)
         self.loss_func = torch.nn.CrossEntropyLoss(ignore_index = 1)
 
         start_iter, start_loss = 0, 0
@@ -113,7 +113,7 @@ class Train(object):
         # compute loss from logits
         loss = self.loss_func(logits, target_batch.contiguous().view(-1))
 
-        if iter % 50 == 0:
+        if iter % 50 == 0 and False:
             print(loss)
             print('\n')
             print(logits.max(1)[1])
@@ -145,13 +145,16 @@ class Train(object):
         print("Starting training...")
         
         start = time.time()
-        only_batch = None
+
+        #only_batch = None
+
         while iter < n_iters:
             batch = self.batcher.next_batch()
-            if iter == 0:
-                only_batch = batch
-            else:
-                batch = only_batch
+            
+            # if iter == 0:
+            #     only_batch = batch
+            # else:
+            #     batch = only_batch
 
             loss = self.train_one_batch(batch, iter)
 
