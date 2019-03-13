@@ -16,12 +16,13 @@ import time
 import torch
 from torch.autograd import Variable
 
-from data_util.batcher import Batcher
+from data_util.batcher import Batcher, Batch
 from data_util.data import Vocab
 from data_util import data, config
 from model import Model
 from data_util.utils import write_for_rouge, rouge_eval, rouge_log
 from train_util import get_input_from_batch
+import glob
 
 
 use_cuda = config.use_gpu and torch.cuda.is_available()
@@ -61,11 +62,28 @@ class BeamSearch(object):
                 os.mkdir(p)
 
         self.vocab = Vocab(config.vocab_path, config.vocab_size)
-        self.batcher = Batcher(config.decode_data_path, self.vocab, mode='decode',
-                               batch_size=config.beam_size, single_pass=True)
-        time.sleep(15)
+        '''self.batcher = Batcher(config.oped_data_path, self.vocab, mode='decode',
+                               batch_size=config.beam_size, single_pass=True)'''
+        self.batches = read_opeds(config.oped_data_path, self.vocab, config.beam_size)
 
         self.model = Model(model_file_path, is_eval=True)
+
+    def read_opeds(config_path, vocab, beam_size):
+        file_list = glob.glob(config_path)
+        batch_list = []
+        for file in file_list:
+            with open(file, 'rb') as f:
+                text = f.read()
+                text = text.split()
+                if len(text) > config.max_enc_steps:
+                    text = text[:config.max_enc_steps]
+                enc_input = [vocab.word2id(w) for w in text]
+                assert(sum(enc_input) != 0)
+
+                enc_input = [enc_input for i in range(beam_size)]
+                batch = Batch(enc_input, vocab, beam_size)
+                batch_list.append(batch)
+        return batch_list
 
     def sort_beams(self, beams):
         return sorted(beams, key=lambda h: h.avg_log_prob, reverse=True)
@@ -74,8 +92,7 @@ class BeamSearch(object):
     def decode(self):
         start = time.time()
         counter = 0
-        batch = self.batcher.next_batch()
-        while batch is not None:
+        for batch in self.batches:
             # Run beam search to get best Hypothesis
             best_summary = self.beam_search(batch)
 
@@ -91,8 +108,6 @@ class BeamSearch(object):
             except ValueError:
                 decoded_words = decoded_words
 
-            original_abstract_sents = batch.original_abstracts_sents[0]
-
             write_for_rouge(original_abstract_sents, decoded_words, counter,
                             self._rouge_ref_dir, self._rouge_dec_dir)
             counter += 1
@@ -100,12 +115,10 @@ class BeamSearch(object):
                 print('%d example in %d sec'%(counter, time.time() - start))
                 start = time.time()
 
-            batch = self.batcher.next_batch()
-
-        print("Decoder has finished reading dataset for single_pass.")
+        '''print("Decoder has finished reading dataset for single_pass.")
         print("Now starting ROUGE eval...")
         results_dict = rouge_eval(self._rouge_ref_dir, self._rouge_dec_dir)
-        rouge_log(results_dict, self._decode_dir)
+        rouge_log(results_dict, self._decode_dir)'''
 
 
     def beam_search(self, batch):
