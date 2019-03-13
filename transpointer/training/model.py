@@ -40,10 +40,10 @@ class Model(nn.Module):
 
         self.transformer = transformer
 
-    def forward(self, src_seq, src_pos, tgt_seq, tgt_pos):
-    #def forward(self, src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros=None, enc_batch_extend_vocab=None):
+    #def forward(self, src_seq, src_pos, tgt_seq, tgt_pos):
+    def forward(self, src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros=None, enc_batch_extend_vocab=None):
 
-        return self.transformer(src_seq, src_pos, tgt_seq, tgt_pos)
-        #return self.transformer(src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros, enc_batch_extend_vocab)
+        #return self.transformer(src_seq, src_pos, tgt_seq, tgt_pos)
+        return self.transformer(src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros, enc_batch_extend_vocab)
 
 

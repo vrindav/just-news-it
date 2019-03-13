@@ -1,8 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 #Except for the pytorch part content of this file is copied from https://github.com/abisee/pointer-generator/blob/master/
 
 from __future__ import unicode_literals, print_function, division
 
 import sys
+import re
+import glob
 
 #reload(sys)
 #sys.setdefaultencoding('utf8')
@@ -18,7 +23,7 @@ import torch
 from torch.autograd import Variable
 import torch.nn.functional as F
 
-from data_util.batcher import Batcher
+from data_util.batcher import Batcher, Example, Batch
 from data_util.data import Vocab
 from data_util import data, config
 from model import Model
@@ -32,6 +37,30 @@ from Beam import Beam
 
 
 use_cuda = config.use_gpu and torch.cuda.is_available()
+
+def write_results(decoded_words, ex_index, _rouge_dec_dir):
+  decoded_sents = []
+  while len(decoded_words) > 0:
+    try:
+      fst_period_idx = decoded_words.index(".")
+    except ValueError:
+      fst_period_idx = len(decoded_words)
+    sent = decoded_words[:fst_period_idx + 1]
+    decoded_words = decoded_words[fst_period_idx + 1:]
+    decoded_sents.append(' '.join(sent))
+
+  # pyrouge calls a perl script that puts the data into HTML files.
+  # Therefore we need to make our output HTML safe.
+  print(decoded_sents)
+  decoded_sents = [make_html_safe(w) for w in decoded_sents]
+
+  print(decoded_sents)
+
+  decoded_file = os.path.join(_rouge_dec_dir, "%06d_decoded.txt" % ex_index)
+
+  with open(decoded_file, "w") as f:
+    for idx, sent in enumerate(decoded_sents):
+      f.write(sent) if idx == len(decoded_sents) - 1 else f.write(sent + "\n")
 
 class Summarizer(object):
     ''' Load with trained model and handle the beam search '''
@@ -78,12 +107,36 @@ class Summarizer(object):
                 os.mkdir(p)
 
         self.vocab = Vocab(config.vocab_path, config.vocab_size)
-        self.batcher = Batcher(config.decode_data_path, self.vocab, mode='decode',
-                               batch_size=config.batch_size, single_pass=True)
+        self.batches = self.read_opeds(config.oped_data_path, self.vocab, config.beam_size)
 
-        time.sleep(15)
+        #time.sleep(15)
         
         print('[Info] Summarizer object created.')
+
+    def read_opeds(self, config_path, vocab, beam_size):
+        file_list = glob.glob(config_path)
+        #file_list = os.listdir(config_path)
+        batch_list = []
+        for file in file_list:
+            with open(file, 'rb') as f:
+                text = f.read().lower().decode('utf-8')
+                text = re.sub('\n', '', text)
+                text = re.sub(r'([.,!?()"])', r' \1 ', text).encode('utf-8')
+                #print(text)
+
+                ex = Example(text, [], vocab)
+
+                # text = text.split()
+                # if len(text) > config.max_enc_steps:
+                #     text = text[:config.max_enc_steps]
+                # enc_input = [vocab.word2id(w.decode('utf-8')) for w in text]
+                # assert(sum(enc_input) != 0)
+
+                enc_input = [ex for _ in range(beam_size)]
+                batch = Batch(enc_input, vocab, beam_size)
+                batch_list.append(batch)
+                print(batch.enc_batch)
+        return batch_list
 
     def summarize_batch(self, src_seq, src_pos):
         ''' Translation work in one batch '''
@@ -170,12 +223,10 @@ class Summarizer(object):
             dec_seq = prepare_beam_dec_seq(inst_dec_beams, len_dec_seq)
             dec_pos = prepare_beam_dec_pos(len_dec_seq, n_active_inst, n_bm)
 
-            # print("first dec_seq", dec_seq)
+            #print("first dec_seq", dec_seq)
             # print("first dec_pos", dec_pos)
 
             word_prob = predict_word(dec_seq, dec_pos, src_seq, enc_output, n_active_inst, n_bm)
-            print(word_prob)
-
 
             # Update the beam with predicted word prob information and collect incomplete instances
             active_inst_idx_list = collect_active_inst_idx_list(
@@ -235,8 +286,6 @@ class Summarizer(object):
 
         batch_hyp, batch_scores = collect_hypothesis_and_scores(inst_dec_beams, self.opt["n_best"])
 
-        print("-" * 50)
-
         return batch_hyp, batch_scores
 
     def get_pos_data(self, padding_masks):
@@ -254,10 +303,12 @@ class Summarizer(object):
     def decode(self):
         start = time.time()
         counter = 0
-        batch = self.batcher.next_batch()
+        #batch = self.batcher.next_batch()
         #print(batch.enc_batch)
 
-        while batch is not None:
+        keep = True
+        for batch in self.batches:
+            #keep = False # one batch only
 
             # Run beam search to get best Hypothesis
             enc_batch, enc_padding_mask, enc_lens, enc_batch_extend_vocab, extra_zeros, c_t_0, coverage_t_0 = get_input_from_batch(batch, use_cuda)
@@ -292,12 +343,12 @@ class Summarizer(object):
                 print('%d example in %d sec'%(counter, time.time() - start))
                 start = time.time()
 
-            batch = self.batcher.next_batch()
+            #batch = self.batcher.next_batch()
 
         print("Decoder has finished reading dataset for single_pass.")
-        print("Now starting ROUGE eval...")
-        results_dict = rouge_eval(self._rouge_ref_dir, self._rouge_dec_dir)
-        rouge_log(results_dict, self._decode_dir)
+        # print("Now starting ROUGE eval...")
+        # results_dict = rouge_eval(self._rouge_ref_dir, self._rouge_dec_dir)
+        # rouge_log(results_dict, self._decode_dir)
 
 
 
