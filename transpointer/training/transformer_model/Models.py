@@ -381,6 +381,7 @@ class ExtractiveTransformer(nn.Module):
 		vocab_dist_ = torch.zeros(config.batch_size, config.max_dec_steps, self.n_tgt_vocab).cuda()
 
 		print(enc_batch_extend_vocab.size())
+		print(torch.sum(enc_batch_extend_vocab >= 50000, 1))
 
 		if extra_zeros is not None:
 			_, n_added = extra_zeros.size()
