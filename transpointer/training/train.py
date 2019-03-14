@@ -96,7 +96,7 @@ class Train(object):
         dec_batch, dec_padding_mask, max_dec_len, dec_lens_var, target_batch = \
             get_output_from_batch(batch, use_cuda)
        # print(target_batch[:, 1:].contiguous().view(-1)[-10:])
-       # print(dec_batch[:, 1:].contiguous().view(-1)[-10:])
+        #print(dec_batch[:, 1:].contiguous().view(-1)[-10:])
 
         in_seq = enc_batch
         in_pos = self.get_pos_data(enc_padding_mask)
@@ -116,11 +116,11 @@ class Train(object):
         if iter % 50 == 0 and False:
             print(loss)
             print('\n')
-            print(logits.max(1)[1])
+            print(logits.max(1)[1][:20])
             print('\n')
-            print(target_batch.contiguous().view(-1)[:10])
+            print(target_batch.contiguous().view(-1)[:20])
             print('\n')
-            print(target_batch.contiguous().view(-1)[-10:])
+            #print(target_batch.contiguous().view(-1)[-10:])
 
         loss.backward()
 
