@@ -119,13 +119,13 @@ class Train(object):
         # compute loss from logits
         loss = self.loss_func(logits, target_batch.contiguous().view(-1))
 
-        if iter % 50 == 0 and False:
+        if iter % 50 == 0 or True:
             print(loss)
             print('\n')
-            print(logits.max(1)[1][:20])
-            print('\n')
-            print(target_batch.contiguous().view(-1)[:20])
-            print('\n')
+            # print(logits.max(1)[1][:20])
+            # print('\n')
+            # print(target_batch.contiguous().view(-1)[:20])
+            # print('\n')
             #print(target_batch.contiguous().view(-1)[-10:])
 
         loss.backward()
@@ -135,7 +135,7 @@ class Train(object):
         #print(tgt_seq[:, 1:].contiguous().view(-1)[:10])
         #print(tgt_seq[:, 1:].contiguous().view(-1)[-10:])
         
-        self.norm = clip_grad_norm_(self.model.parameters(), config.max_grad_norm) # ----> this line causes error
+        self.norm = clip_grad_norm_(self.model.parameters(), config.max_grad_norm)
         clip_grad_norm_(self.model.parameters(), config.max_grad_norm)
 
         #self.optimizer.step()
