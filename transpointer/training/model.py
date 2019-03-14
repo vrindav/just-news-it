@@ -26,13 +26,10 @@ class Model(nn.Module):
     def __init__(self, n_src_vocab, n_tgt_vocab, len_max_seq, model_file_path=None, is_eval=False):
         super(Model, self).__init__()
 
-        transformer = tm.Transformer(n_src_vocab, n_tgt_vocab, len_max_seq)
+        transformer = tm.Transformer(n_src_vocab, n_tgt_vocab, len_max_seq, d_word_vec = config.d_word_vec, 
+                        d_model = config.d_model, d_inner = config.d_inner, n_layers = config.n_layers, 
+                        n_head = config.n_head, d_k = config.d_k, d_v = config.d_v, dropout = config.dropout)
         #transformer = tm.Transpointer(n_src_vocab, n_tgt_vocab, len_max_seq, n_head=8)
-
-            # d_word_vec=512, d_model=512, d_inner=2048,
-            # n_layers=6, n_head=8, d_k=64, d_v=64, dropout=0.1,
-            # tgt_emb_prj_weight_sharing=True,
-            # emb_src_tgt_weight_sharing=True
 
         if use_cuda:
             transformer = transformer.cuda()
