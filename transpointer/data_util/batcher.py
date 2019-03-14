@@ -23,6 +23,7 @@ class Example(object):
   def __init__(self, article, abstract_sentences, vocab):
 
     STOPS = stopwords.words('english')
+    STOPS = []
 
     # Get ids of special tokens
     start_decoding = vocab.word2id(data.START_DECODING)
