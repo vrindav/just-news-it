@@ -42,6 +42,9 @@ class Example(object):
     abstract = ' '.join(abstract_sentences) # string
     abstract_words = abstract.split() # list of strings
     abs_ids = [vocab.word2id(w) for w in abstract_words] # list of word ids; OOVs are represented by the id for UNK token
+    if sum(abs_ids) == 0:
+      abs_ids = [vocab.word2id(w.decode('utf-8')) for w in abstract_words] 
+
     
     # Get the decoder input sequence and target sequence
     self.dec_input, self.target = self.get_dec_inp_targ_seqs(abs_ids, config.max_dec_steps, start_decoding, stop_decoding)
