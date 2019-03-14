@@ -380,7 +380,7 @@ class ExtractiveTransformer(nn.Module):
 
 		vocab_dist_ = torch.zeros(config.batch_size, config.max_dec_steps, self.n_tgt_vocab).cuda()
 
-		print(enc_batch_extend_vocab)
+		print(enc_batch_extend_vocab.size())
 
 		if extra_zeros is not None:
 			_, n_added = extra_zeros.size()
