@@ -14,6 +14,8 @@ from torch.nn.utils import clip_grad_norm_
 from torch.optim import Adam, Adagrad
 
 from data_util import config
+
+from transformer_model.Optim import ScheduledOptim
 from data_util.batcher import Batcher
 from data_util.data import Vocab
 from data_util.utils import calc_running_avg_loss
@@ -42,7 +44,7 @@ class Train(object):
         state = {
             'iter': iter,
             'transformer_state_dict': self.model.state_dict(),
-            'optimizer': self.optimizer.state_dict(),
+            'optimizer': self.optimizer._optimizer.state_dict(),
             'current_loss': running_avg_loss
         }
         model_save_path = os.path.join(self.model_dir, 'model_%d_%d' % (iter, int(time.time())))
@@ -55,8 +57,11 @@ class Train(object):
 
         params = list(self.model.parameters())
         initial_lr = config.lr_coverage if config.is_coverage else config.lr
-        #self.optimizer = Adam(params, lr=initial_lr)
-        self.optimizer = Adagrad(params, lr=initial_lr, initial_accumulator_value=config.adagrad_init_acc)
+        self.optimizer = ScheduledOptim(Adam(
+            filter(lambda x: x.requires_grad, self.model.parameters()),
+            betas=(0.9, 0.98), eps=1e-09),
+            config.d_model, config.n_warmup_steps)
+        #self.optimizer = Adagrad(params, lr=initial_lr, initial_accumulator_value=config.adagrad_init_acc)
         self.loss_func = torch.nn.CrossEntropyLoss(ignore_index = 1)
 
         start_iter, start_loss = 0, 0
@@ -96,7 +101,7 @@ class Train(object):
         dec_batch, dec_padding_mask, max_dec_len, dec_lens_var, target_batch = \
             get_output_from_batch(batch, use_cuda)
        # print(target_batch[:, 1:].contiguous().view(-1)[-10:])
-       # print(dec_batch[:, 1:].contiguous().view(-1)[-10:])
+        #print(dec_batch[:, 1:].contiguous().view(-1)[-10:])
 
         in_seq = enc_batch
         in_pos = self.get_pos_data(enc_padding_mask)
@@ -106,8 +111,9 @@ class Train(object):
         
         # padding is already done in previous function (see batcher.py - init_decoder_seq & init_decoder_seq - Batch class)
         self.optimizer.zero_grad()
-        logits = self.model.forward(in_seq, in_pos, tgt_seq, tgt_pos, 
-            extra_zeros, enc_batch_extend_vocab)
+        logits = self.model.forward(in_seq, in_pos, tgt_seq, tgt_pos)
+        #, 
+         #   extra_zeros, enc_batch_extend_vocab)
 
 
         # compute loss from logits
@@ -116,11 +122,11 @@ class Train(object):
         if iter % 50 == 0 and False:
             print(loss)
             print('\n')
-            print(logits.max(1)[1])
+            print(logits.max(1)[1][:20])
             print('\n')
-            print(target_batch.contiguous().view(-1)[:10])
+            print(target_batch.contiguous().view(-1)[:20])
             print('\n')
-            print(target_batch.contiguous().view(-1)[-10:])
+            #print(target_batch.contiguous().view(-1)[-10:])
 
         loss.backward()
 
@@ -132,7 +138,8 @@ class Train(object):
         self.norm = clip_grad_norm_(self.model.parameters(), config.max_grad_norm) # ----> this line causes error
         clip_grad_norm_(self.model.parameters(), config.max_grad_norm)
 
-        self.optimizer.step()
+        #self.optimizer.step()
+        self.optimizer.step_and_update_lr()
 
         return loss.item()
 
