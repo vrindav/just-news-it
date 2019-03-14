@@ -26,10 +26,13 @@ class Model(nn.Module):
     def __init__(self, n_src_vocab, n_tgt_vocab, len_max_seq, model_file_path=None, is_eval=False):
         super(Model, self).__init__()
 
-        transformer = tm.Transformer(n_src_vocab, n_tgt_vocab, len_max_seq, d_word_vec = config.d_word_vec, 
+        # transformer = tm.Transformer(n_src_vocab, n_tgt_vocab, len_max_seq, d_word_vec = config.d_word_vec, 
+        #                 d_model = config.d_model, d_inner = config.d_inner, n_layers = config.n_layers, 
+        #                 n_head = config.n_head, d_k = config.d_k, d_v = config.d_v, dropout = config.dropout)
+        #transformer = tm.Transpointer(n_src_vocab, n_tgt_vocab, len_max_seq, n_head=8)
+        transformer = tm.ExtractiveTransformer(n_src_vocab, n_tgt_vocab, len_max_seq, d_word_vec = config.d_word_vec, 
                         d_model = config.d_model, d_inner = config.d_inner, n_layers = config.n_layers, 
                         n_head = config.n_head, d_k = config.d_k, d_v = config.d_v, dropout = config.dropout)
-        #transformer = tm.Transpointer(n_src_vocab, n_tgt_vocab, len_max_seq, n_head=8)
 
         if use_cuda:
             transformer = transformer.cuda()
@@ -37,10 +40,10 @@ class Model(nn.Module):
 
         self.transformer = transformer
 
-    def forward(self, src_seq, src_pos, tgt_seq, tgt_pos):
-    #def forward(self, src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros=None, enc_batch_extend_vocab=None):
+    #def forward(self, src_seq, src_pos, tgt_seq, tgt_pos):
+    def forward(self, src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros=None, enc_batch_extend_vocab=None):
 
-        return self.transformer(src_seq, src_pos, tgt_seq, tgt_pos)
-        #return self.transformer(src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros, enc_batch_extend_vocab)
+        #return self.transformer(src_seq, src_pos, tgt_seq, tgt_pos)
+        return self.transformer(src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros, enc_batch_extend_vocab)
 
 

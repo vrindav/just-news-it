@@ -319,3 +319,74 @@ class Transpointer(nn.Module):
 		final_dist = vocab_dist_.scatter_add(1, enc_batch_extend_vocab, attn_dist_)
 
 		return final_dist
+
+class ExtractiveTransformer(nn.Module):
+	''' A sequence to sequence model with attention mechanism. '''
+
+	def __init__(
+			self,
+			n_src_vocab, n_tgt_vocab, len_max_seq,
+			d_word_vec=512, d_model=512, d_inner=2048,
+			n_layers=6, n_head=8, d_k=64, d_v=64, dropout=0.1,
+			tgt_emb_prj_weight_sharing=True,
+			emb_src_tgt_weight_sharing=True):
+
+		super().__init__()
+
+		self.encoder = Encoder(
+			n_src_vocab=n_src_vocab, len_max_seq=len_max_seq,
+			d_word_vec=d_word_vec, d_model=d_model, d_inner=d_inner,
+			n_layers=n_layers, n_head=n_head, d_k=d_k, d_v=d_v,
+			dropout=dropout)
+
+		self.decoder = Decoder(
+			n_tgt_vocab=n_tgt_vocab, len_max_seq=len_max_seq,
+			d_word_vec=d_word_vec, d_model=d_model, d_inner=d_inner,
+			n_layers=n_layers, n_head=n_head, d_k=d_k, d_v=d_v,
+			dropout=dropout)
+
+		self.tgt_word_prj = nn.Linear(d_model, len_max_seq, bias=False)
+		nn.init.xavier_normal_(self.tgt_word_prj.weight)
+
+		self.n_tgt_vocab = n_tgt_vocab
+
+		assert d_model == d_word_vec, \
+		'To facilitate the residual connections, \
+		 the dimensions of all module outputs shall be the same.'
+
+		if tgt_emb_prj_weight_sharing:
+			# Share the weight matrix between target word embedding & the final logit dense layer
+			self.tgt_word_prj.weight = self.decoder.tgt_word_emb.weight
+			self.x_logit_scale = (d_model ** -0.5)
+		else:
+			self.x_logit_scale = 1.
+
+		if emb_src_tgt_weight_sharing:
+			# Share the weight matrix between source & target word embeddings
+			assert n_src_vocab == n_tgt_vocab, \
+			"To share word embedding table, the vocabulary size of src/tgt shall be the same."
+			self.encoder.src_word_emb.weight = self.decoder.tgt_word_emb.weight
+
+	def forward(self, src_seq, src_pos, tgt_seq, tgt_pos, extra_zeros, enc_batch_extend_vocab):
+
+		batch_size, max_seq_len = src_seq.size()
+
+		#tgt_seq, tgt_pos = tgt_seq[:, :-1], tgt_pos[:, :-1]
+
+		enc_output, *_ = self.encoder(src_seq, src_pos)
+		dec_output, *_ = self.decoder(tgt_seq, tgt_pos, src_seq, enc_output)
+				
+		seq_logit = self.tgt_word_prj(dec_output) * self.x_logit_scale
+
+		b_size, seq_len = seq_logit.size()
+
+		vocab_dist_ = torch.zeros(b_size, self.n_tgt_vocab)
+
+		if extra_zeros is not None:
+			extra_zeros = extra_zeros.repeat(1, config.max_dec_steps).reshape(-1, extra_zeros.size(1))
+			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 1)
+
+		enc_batch_extend_vocab = enc_batch_extend_vocab.repeat(1, config.max_dec_steps).reshape(-1, config.max_article_len)
+		final_dist = vocab_dist_.scatter_add(1, enc_batch_extend_vocab, attn_dist_)
+
+		return final_dist.view(-1, seq_logit.size(2))
