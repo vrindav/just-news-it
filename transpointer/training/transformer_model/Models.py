@@ -55,6 +55,20 @@ def get_subsequent_mask(seq):
 
 	return subsequent_mask
 
+def get_local_mask(seq, window_size):
+	''' For masking out the info. Not in the window.'''
+
+	sz_b, len_s = seq.size()
+	subsequent_mask = torch.triu(
+		torch.ones((len_s, len_s), device=seq.device, dtype=torch.uint8), diagonal=window_size)
+	subsequent_mask = subsequent_mask.unsqueeze(0).expand(sz_b, -1, -1)  # b x ls x ls
+
+	prev_mask = torch.tril(
+		torch.ones((len_s, len_s), device=seq.device, dtype=torch.uint8), diagonal=-window_size)
+	prev_mask = prev_mask.unsqueeze(0).expand(sz_b, -1, -1)  # b x ls x ls
+
+	return subsequent_mask + prev_mask
+
 class Encoder(nn.Module):
 	''' A encoder model with self attention mechanism. '''
 
@@ -85,6 +99,9 @@ class Encoder(nn.Module):
 
 		# -- Prepare masks
 		slf_attn_mask = get_attn_key_pad_mask(seq_k=src_seq, seq_q=src_seq)
+		if config.local_attention_window_size > 0:
+			slf_attn_mask = (slf_attn_mask.int() | get_local_mask(seq, config.local_attention_window_size)).float()
+			
 		non_pad_mask = get_non_pad_mask(src_seq)
 
 		# -- Forward
