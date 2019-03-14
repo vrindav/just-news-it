@@ -4,6 +4,7 @@ import queue
 import time
 from random import shuffle
 from threading import Thread
+from nltk import corpus
 
 import numpy as np
 import tensorflow as tf
@@ -20,6 +21,9 @@ random.seed(1234)
 class Example(object):
 
   def __init__(self, article, abstract_sentences, vocab):
+
+    STOPS = stopwords.words('english')
+
     # Get ids of special tokens
     start_decoding = vocab.word2id(data.START_DECODING)
     stop_decoding = vocab.word2id(data.STOP_DECODING)
@@ -29,7 +33,7 @@ class Example(object):
     if len(article_words) > config.max_enc_steps:
       article_words = article_words[:config.max_enc_steps]
     self.enc_len = len(article_words) # store the length after truncation but before padding
-    self.enc_input = [vocab.word2id(w.decode('utf-8')) for w in article_words] # list of word ids; OOVs are represented by the id for UNK token
+    self.enc_input = [vocab.word2id(w.decode('utf-8')) for w in article_words if w not in STOPS] # list of word ids; OOVs are represented by the id for UNK token
     #print(article_words)
     #print(self.enc_input)
 
