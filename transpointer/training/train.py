@@ -57,7 +57,7 @@ class Train(object):
 
         params = list(self.model.parameters())
         initial_lr = config.lr_coverage if config.is_coverage else config.lr
-        self.optimizer = ScheduledOptim(optim.Adam(
+        self.optimizer = ScheduledOptim(Adam(
             filter(lambda x: x.requires_grad, model.parameters()),
             config.d_model, config.n_warmup_steps))
         #self.optimizer = Adagrad(params, lr=initial_lr, initial_accumulator_value=config.adagrad_init_acc)
