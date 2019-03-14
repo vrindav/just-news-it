@@ -44,7 +44,7 @@ class Train(object):
         state = {
             'iter': iter,
             'transformer_state_dict': self.model.state_dict(),
-            'optimizer': self.optimizer.optimizer.state_dict(),
+            'optimizer': self.optimizer._optimizer.state_dict(),
             'current_loss': running_avg_loss
         }
         model_save_path = os.path.join(self.model_dir, 'model_%d_%d' % (iter, int(time.time())))
