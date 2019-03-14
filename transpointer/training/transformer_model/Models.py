@@ -381,7 +381,9 @@ class ExtractiveTransformer(nn.Module):
 		vocab_dist_ = torch.zeros(config.batch_size, config.max_dec_steps, config.max_article_len).cuda()
 
 		if extra_zeros is not None:
+			print(vocab_dist_.size(), extra_zeros.size())
 			extra_zeros = extra_zeros.repeat(1, config.max_dec_steps).reshape(-1, extra_zeros.size(1))
+			print(vocab_dist_.size(), extra_zeros.size())
 			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 1)
 
 		enc_batch_extend_vocab = enc_batch_extend_vocab.repeat(1, config.max_dec_steps).reshape(-1, config.max_article_len)
