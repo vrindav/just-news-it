@@ -378,7 +378,7 @@ class ExtractiveTransformer(nn.Module):
 				
 		seq_logit = self.tgt_word_prj(dec_output) * self.x_logit_scale
 
-		vocab_dist_ = torch.zeros(config.batch_size, config.max_dec_steps, config.max_article_len)
+		vocab_dist_ = torch.zeros(config.batch_size, config.max_dec_steps, config.max_article_len).cuda()
 
 		if extra_zeros is not None:
 			extra_zeros = extra_zeros.repeat(1, config.max_dec_steps).reshape(-1, extra_zeros.size(1))
