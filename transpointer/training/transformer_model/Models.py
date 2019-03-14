@@ -381,12 +381,13 @@ class ExtractiveTransformer(nn.Module):
 		vocab_dist_ = torch.zeros(config.batch_size, config.max_dec_steps, self.n_tgt_vocab).cuda()
 
 		if extra_zeros is not None:
+			_, n_added = extra_zeros.size()
 			print(vocab_dist_.size(), extra_zeros.size())
-			extra_zeros = extra_zeros.repeat(1, config.max_dec_steps).reshape(config.batch_size, config.max_dec_steps, extra_zeros.size(1))
+			extra_zeros = extra_zeros.repeat(1, config.max_dec_steps).reshape(config.batch_size, config.max_dec_steps, n_added)
 			print(vocab_dist_.size(), extra_zeros.size())
 			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 2)
 
-		enc_batch_extend_vocab = enc_batch_extend_vocab.repeat(1, config.max_dec_steps).reshape(config.batch_size, config.max_dec_steps, extra_zeros.size(1))
+		enc_batch_extend_vocab = enc_batch_extend_vocab.repeat(1, config.max_dec_steps).reshape(config.batch_size, config.max_dec_steps, n_added)
 		final_dist = vocab_dist_.scatter_add(2, enc_batch_extend_vocab, attn_dist_)
 
 		return final_dist.view(-1, final_dist.size(2))
