@@ -4,7 +4,7 @@ import queue
 import time
 from random import shuffle
 from threading import Thread
-from nltk import corpus
+from nltk.corpus import stopwords
 
 import numpy as np
 import tensorflow as tf
