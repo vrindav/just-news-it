@@ -1,6 +1,7 @@
 ''' Define the Transformer model '''
 import torch
 import torch.nn as nn
+from torch.autograd import Variable
 import numpy as np
 import transformer_model.Constants as Constants
 from transformer_model.Layers import EncoderLayer, DecoderLayer
