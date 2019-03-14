@@ -119,7 +119,7 @@ class Train(object):
         # compute loss from logits
         loss = self.loss_func(logits, target_batch.contiguous().view(-1))
 
-        if iter % 50 == 0 or True:
+        if iter % 50 == 0 and False:
             print(iter, loss)
             print('\n')
             # print(logits.max(1)[1][:20])
