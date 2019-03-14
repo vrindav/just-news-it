@@ -102,6 +102,8 @@ class Encoder(nn.Module):
 		if config.local_attention_window_size > 0:
 			slf_attn_mask = (slf_attn_mask.int() | get_local_mask(src_seq, config.local_attention_window_size).int()).byte()
 
+		print(slf_attn_mask)
+
 		non_pad_mask = get_non_pad_mask(src_seq)
 
 		# -- Forward
@@ -117,6 +119,8 @@ class Encoder(nn.Module):
 
 		if return_attns:
 			return enc_output, enc_slf_attn_list
+
+		print(enc_output)
 		return enc_output,
 
 class Decoder(nn.Module):
