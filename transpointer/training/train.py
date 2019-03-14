@@ -59,7 +59,8 @@ class Train(object):
         initial_lr = config.lr_coverage if config.is_coverage else config.lr
         self.optimizer = ScheduledOptim(Adam(
             filter(lambda x: x.requires_grad, self.model.parameters()),
-            config.d_model, config.n_warmup_steps))
+            betas=(0.9, 0.98), eps=1e-09),
+            config.d_model, config.n_warmup_steps)
         #self.optimizer = Adagrad(params, lr=initial_lr, initial_accumulator_value=config.adagrad_init_acc)
         self.loss_func = torch.nn.CrossEntropyLoss(ignore_index = 1)
 
