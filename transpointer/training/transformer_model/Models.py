@@ -378,15 +378,15 @@ class ExtractiveTransformer(nn.Module):
 				
 		seq_logit = self.tgt_word_prj(dec_output) * self.x_logit_scale
 
-		vocab_dist_ = torch.zeros(config.batch_size, config.max_dec_steps, config.max_article_len).cuda()
+		vocab_dist_ = torch.zeros(config.batch_size, config.max_dec_steps, self.n_tgt_vocab).cuda()
 
 		if extra_zeros is not None:
 			print(vocab_dist_.size(), extra_zeros.size())
-			extra_zeros = extra_zeros.repeat(1, config.max_dec_steps).reshape(-1, extra_zeros.size(1))
+			extra_zeros = extra_zeros.repeat(1, config.max_dec_steps)
 			print(vocab_dist_.size(), extra_zeros.size())
-			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 1)
+			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 2)
 
-		enc_batch_extend_vocab = enc_batch_extend_vocab.repeat(1, config.max_dec_steps).reshape(-1, config.max_article_len)
-		final_dist = vocab_dist_.scatter_add(1, enc_batch_extend_vocab, attn_dist_)
+		enc_batch_extend_vocab = enc_batch_extend_vocab.repeat(1, config.max_dec_steps)#.reshape(-1, config.max_article_len)
+		final_dist = vocab_dist_.scatter_add(2, enc_batch_extend_vocab, attn_dist_)
 
-		return final_dist.view(-1, seq_logit.size(2))
+		return final_dist.view(-1, final_dist.size(2))
