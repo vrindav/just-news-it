@@ -101,8 +101,7 @@ class Encoder(nn.Module):
 		slf_attn_mask = get_attn_key_pad_mask(seq_k=src_seq, seq_q=src_seq)
 		if config.local_attention_window_size > 0:
 			slf_attn_mask = (slf_attn_mask.int() | get_local_mask(src_seq, config.local_attention_window_size).int()).byte()
-			print(slf_attn_mask.size())
-			print(torch.sum(1 - slf_attn_mask, dim=1))
+			print(slf_attn_mask[0])
 
 		print(slf_attn_mask)
 
