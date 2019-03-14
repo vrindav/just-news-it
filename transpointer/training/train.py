@@ -109,6 +109,7 @@ class Train(object):
         tgt_pos = self.get_pos_data(dec_padding_mask)
 
         print(in_seq[0, :50])
+        print(enc_batch_extend_vocab[0, :50])
 
         
         # padding is already done in previous function (see batcher.py - init_decoder_seq & init_decoder_seq - Batch class)
