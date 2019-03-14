@@ -382,11 +382,11 @@ class ExtractiveTransformer(nn.Module):
 
 		if extra_zeros is not None:
 			print(vocab_dist_.size(), extra_zeros.size())
-			extra_zeros = extra_zeros.repeat(1, config.max_dec_steps)
+			extra_zeros = extra_zeros.unsqueeze(1).repeat(1, config.max_dec_steps)
 			print(vocab_dist_.size(), extra_zeros.size())
 			vocab_dist_ = torch.cat([vocab_dist_, extra_zeros], 2)
 
-		enc_batch_extend_vocab = enc_batch_extend_vocab.repeat(1, config.max_dec_steps)#.reshape(-1, config.max_article_len)
+		enc_batch_extend_vocab = enc_batch_extend_vocab.unsqueeze(1).repeat(1, config.max_dec_steps)#.reshape(-1, config.max_article_len)
 		final_dist = vocab_dist_.scatter_add(2, enc_batch_extend_vocab, attn_dist_)
 
 		return final_dist.view(-1, final_dist.size(2))
