@@ -104,7 +104,7 @@ def article2ids(article_words, vocab):
   oovs = []
   unk_id = vocab.word2id(UNKNOWN_TOKEN)
   for w in article_words:
-    i = vocab.word2id(w)
+    i = vocab.word2id(w.decode('utf-8'))
     if i == unk_id: # If w is OOV
       if w not in oovs: # Add to list of OOVs
         oovs.append(w)
