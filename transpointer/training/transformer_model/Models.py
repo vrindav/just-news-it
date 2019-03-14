@@ -100,8 +100,8 @@ class Encoder(nn.Module):
 		# -- Prepare masks
 		slf_attn_mask = get_attn_key_pad_mask(seq_k=src_seq, seq_q=src_seq)
 		if config.local_attention_window_size > 0:
-			slf_attn_mask = (slf_attn_mask.int() | get_local_mask(src_seq, config.local_attention_window_size)).float()
-			
+			slf_attn_mask = (slf_attn_mask.int() | get_local_mask(src_seq, config.local_attention_window_size).int()).float()
+
 		non_pad_mask = get_non_pad_mask(src_seq)
 
 		# -- Forward
