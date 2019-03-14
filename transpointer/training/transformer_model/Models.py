@@ -378,10 +378,8 @@ class ExtractiveTransformer(nn.Module):
 				
 		seq_logit = self.tgt_word_prj(dec_output) * self.x_logit_scale
 
-		vocab_dist_ = torch.zeros(config.batch_size, config.max_dec_steps, self.n_tgt_vocab).cuda()
-
-		print(enc_batch_extend_vocab.size())
-		print(torch.sum(enc_batch_extend_vocab >= 50000, 1))
+		#vocab_dist_ = torch.zeros(config.batch_size, config.max_dec_steps, self.n_tgt_vocab).cuda()
+		vocab_dist_ = Variable(torch.zeros(config.batch_size, config.max_dec_steps, self.n_tgt_vocab).cuda(), requires_grad=True).clone()
 
 		if extra_zeros is not None:
 			_, n_added = extra_zeros.size()
