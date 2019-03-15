@@ -121,7 +121,7 @@ class Train(object):
             target = target_batch[i]
             ex_logits = logits[i]
             print(target.size())
-            print(targets)
+            print(target)
             print(ex_logits.size())
             print(ex_logits)
             target[ex_logits == 0] = 0
