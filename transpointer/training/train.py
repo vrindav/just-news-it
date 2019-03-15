@@ -114,7 +114,17 @@ class Train(object):
         logits = self.model.forward(in_seq, in_pos, tgt_seq, tgt_pos, extra_zeros, enc_batch_extend_vocab)
 
         # compute loss from logits
-        loss = self.loss_func(logits, target_batch.contiguous().view(-1))
+        #loss = self.loss_func(logits, target_batch.contiguous().view(-1))
+
+        losses = []
+        for i in range(confi.batch_size):
+            target = target_batch[i]
+            ex_logits = logits[i]
+
+            target[ex_logits == 0] = 0
+            losses.append(self.loss_func(ex_logits, target))
+
+        sum_losses = torch.mean(torch.stack(losses, 1), 1)
 
         if iter % 50 == 0 and False:
             print(iter, loss)

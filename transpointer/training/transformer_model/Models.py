@@ -394,6 +394,6 @@ class ExtractiveTransformer(nn.Module):
 		#final_dist = vocab_dist_.scatter_add(2, enc_batch_extend_vocab, seq_logit)
 		vocab_dist_.scatter_add_(2, enc_batch_extend_vocab, seq_logit)
 
-		return vocab_dist_.view(-1, vocab_dist_.size(2))
+		return vocab_dist_
 
 		return final_dist.view(-1, final_dist.size(2))
