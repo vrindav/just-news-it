@@ -117,15 +117,16 @@ class Train(object):
         #loss = self.loss_func(logits, target_batch.contiguous().view(-1))
 
         losses = []
-        for i in range(config.batch_size):
+        target_batch[torch.gather(logits, 2, target_batch) == 0] = 0
+        print(target_batch.size(), logits.size())
+
+        '''for i in range(config.batch_size):
             target = target_batch[i]
             ex_logits = logits[i]
             print(target.size())
-            print(target)
             print(ex_logits.size())
-            print(ex_logits)
-            ex_logits[target == 0] = 0
-            losses.append(self.loss_func(ex_logits, target))
+            target[torch.gather(ex_logits, 2, target) == 0] = 0
+            losses.append(self.loss_func(ex_logits, target))'''
 
         sum_losses = torch.mean(torch.stack(losses, 1), 1)
 
