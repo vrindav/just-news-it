@@ -117,7 +117,7 @@ class Train(object):
         #loss = self.loss_func(logits, target_batch.contiguous().view(-1))
 
         losses = []
-        for i in range(confi.batch_size):
+        for i in range(config.batch_size):
             target = target_batch[i]
             ex_logits = logits[i]
 
