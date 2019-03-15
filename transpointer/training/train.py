@@ -119,14 +119,16 @@ class Train(object):
         losses = []
 
         print(logits.size(), target_batch.size())
-        target_batch[torch.gather(logits, 2, target_batch) == 0] = 0
+        #arget_batch[torch.gather(logits, 2, target_batch) == 0] = 0
 
-        '''for i in range(config.batch_size):
+
+        for i in range(config.batch_size):
             target = target_batch[i]
             ex_logits = logits[i]
-            print(target.size())
-            print(ex_logits.size())
+            #print(target.size())
+            #print(ex_logits.size())
             #target[torch.gather(ex_logits, 2, target) == 0] = 0
+            print(logits.size(), target.size())
             target_batch[torch.gather(logits, 2, target) == 0] = 0
             losses.append(self.loss_func(ex_logits, target))'''
 
