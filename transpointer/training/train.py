@@ -5,6 +5,7 @@ sys.path.insert(0, '../')
 import os
 import time
 import argparse
+import pickle
 
 import tensorflow as tf
 import torch
@@ -114,33 +115,20 @@ class Train(object):
         logits = self.model.forward(in_seq, in_pos, tgt_seq, tgt_pos, extra_zeros, enc_batch_extend_vocab)
 
         # compute loss from logits
-        #loss = self.loss_func(logits, target_batch.contiguous().view(-1))
+        loss = self.loss_func(logits, target_batch.contiguous().view(-1))
 
-        losses = []
+    
 
-        print(logits.size(), target_batch.size())
+        # target_batch[torch.gather(logits, 2, target_batch.unsqueeze(2)).squeeze(2) == 0] = 1
+        # target_batch = target_batch.contiguous().view(-1)
+        # logits = logits.reshape(-1, logits.size()[2])
+        # print(target_batch)
+        # print('\n')
+        # print(logits.size(), target_batch.size())
+        # print('\n')
+        #loss = self.loss_func(logits, target_batch)
 
-        target_batch[torch.gather(logits, 2, target_batch.unsqueeze(2)).squeeze(2) == 0] = 1
-
-
-        '''for i in range(config.batch_size):
-            target = target_batch[i]
-            ex_logits = logits[i]
-            #print(target.size())
-            #print(ex_logits.size())
-            #target[torch.gather(ex_logits, 2, target) == 0] = 0
-            print(logits.size(), target.size())
-            target_batch[torch.gather(logits, 2, target) == 0] = 0
-            losses.append(self.loss_func(ex_logits, target))'''
-
-        target_batch = target_batch.contiguous().view(-1)
-        logits = logits.reshape(-1, logits.size()[2])
-        print(target_batch)
-        print('\n')
-        print(logits.size(), target_batch.size())
-        print('\n')
-        loss = self.loss_func(logits, target_batch)
-        print(loss)
+        #print(loss)
         #sum_losses = torch.mean(torch.stack(losses, 1), 1)
 
         if iter % 50 == 0 and False:
@@ -174,10 +162,14 @@ class Train(object):
         iter, running_avg_loss = self.setup_train(n_src_vocab, n_tgt_vocab, model_file_path)
 
         print("Starting training...")
+        print("Data for this model will be stored in", self.model_dir)
         
         start = time.time()
 
         #only_batch = None
+        losses = []
+        iters = []
+        save_name = os.path.join(self.model_dir, "loss_lists")
 
         while iter < n_iters:
             batch = self.batcher.next_batch()
@@ -199,11 +191,19 @@ class Train(object):
                 print('steps %d, seconds for %d batch: %.2f , loss: %f' % (iter, print_interval,
                                                                            time.time() - start, loss))
                 start = time.time()
+                
+                iters.append(iter)
+                losses.append(loss)
+
+                with open(save_name, 'wb') as f:
+                    pickle.dump((losses, iters), f)
             
             if iter % 5000 == 0:
                 path = self.save_model(running_avg_loss, iter)
 
                 print("Saving Checkpoint at {}".format(path))
+
+
                 
 
 if __name__ == '__main__':
