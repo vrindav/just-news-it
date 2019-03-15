@@ -119,7 +119,8 @@ class Train(object):
         losses = []
 
         print(logits.size(), target_batch.size())
-        target_batch[torch.gather(logits, 2, target_batch) == 0] = 0
+
+        target_batch[torch.gather(logits, 2, target_batch.unsqueeze(2)).squeeze(2) == 0] = 0
 
 
         '''for i in range(config.batch_size):
@@ -132,7 +133,8 @@ class Train(object):
             target_batch[torch.gather(logits, 2, target) == 0] = 0
             losses.append(self.loss_func(ex_logits, target))'''
 
-        sum_losses = torch.mean(torch.stack(losses, 1), 1)
+        loss = self.loss_func(logits, target_batch)
+        #sum_losses = torch.mean(torch.stack(losses, 1), 1)
 
         if iter % 50 == 0 and False:
             print(iter, loss)
