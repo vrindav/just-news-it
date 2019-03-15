@@ -133,6 +133,8 @@ class Train(object):
             target_batch[torch.gather(logits, 2, target) == 0] = 0
             losses.append(self.loss_func(ex_logits, target))'''
 
+        target_batch = target_batch.contiguous().view(-1)
+        logits = logits.reshape(-1, logits.size()[2])
         loss = self.loss_func(logits, target_batch)
         #sum_losses = torch.mean(torch.stack(losses, 1), 1)
 
