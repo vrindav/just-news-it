@@ -140,6 +140,7 @@ class Train(object):
         print(logits.size(), target_batch.size())
         print('\n')
         loss = self.loss_func(logits, target_batch)
+        print(loss)
         #sum_losses = torch.mean(torch.stack(losses, 1), 1)
 
         if iter % 50 == 0 and False:
