@@ -124,7 +124,7 @@ class Train(object):
             print(target)
             print(ex_logits.size())
             print(ex_logits)
-            target[ex_logits == 0] = 0
+            ex_logits[target == 0] = 0
             losses.append(self.loss_func(ex_logits, target))
 
         sum_losses = torch.mean(torch.stack(losses, 1), 1)
