@@ -120,7 +120,7 @@ class Train(object):
 
         print(logits.size(), target_batch.size())
 
-        target_batch[torch.gather(logits, 2, target_batch.unsqueeze(2)).squeeze(2) == 0] = 0
+        target_batch[torch.gather(logits, 2, target_batch.unsqueeze(2)).squeeze(2) == 0] = 1
 
 
         '''for i in range(config.batch_size):
